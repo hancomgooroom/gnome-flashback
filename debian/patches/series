@@ -14,3 +14,4 @@ gooroom-12-remove-secondary-message-from-autorunmanager-error-dialog.patch
 gooroom-13-restrict-Korean-input-when-entering-password.patch
 gooroom-14-initialize-variable-called-current_mode.patch
 gooroom-15-updated-monitors-xml-system-wide-helper-check-input-file.patch
+gooroom-16-changed-screensaver-logo-image-of-Hancom-Gooroom.patch
