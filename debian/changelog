@@ -1,3 +1,10 @@
+gnome-flashback (3.38.0-2+grm3u2+han3u1) unstable; urgency=medium
+
+  [ heejun.jang ]
+  * [b0f87b81] Changed screensaver logo image of Hancom Gooroom
+
+ -- Gooroom Autobuilder <jenkins@gooroom.kr>  Fri, 11 Mar 2022 21:41:58 +0900
+
 gnome-flashback (3.38.0-2+grm3u2) unstable; urgency=medium
 
   [ heejun.jang ]
