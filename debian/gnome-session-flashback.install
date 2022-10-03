@@ -1,0 +1,7 @@
+etc/xdg/autostart/
+usr/lib/systemd/user/gnome-session@gnome-flashback-metacity.target.d/session.conf
+usr/libexec/gnome-flashback-metacity
+usr/share/glib-2.0/schemas/00_gnome-flashback.gschema.override
+usr/share/gnome-panel/layouts/gnome-flashback.layout
+usr/share/gnome-session/
+usr/share/xsessions/

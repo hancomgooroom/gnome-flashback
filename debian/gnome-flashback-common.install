@@ -1,0 +1,7 @@
+etc/xdg/menus/
+usr/lib/systemd/user/gnome-flashback.service
+usr/lib/systemd/user/gnome-flashback.target
+usr/share/desktop-directories/
+usr/share/glib-2.0/schemas/*.xml
+usr/share/gnome-control-center/keybindings/50-gnome-flashback-screenshots.xml
+usr/share/locale/

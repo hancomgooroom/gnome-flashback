@@ -1,0 +1,2 @@
+rm_conffile /etc/xdg/autostart/gnome-flashback-nm-applet.desktop 3.18.2-1~ gnome-flashback-common
+rm_conffile /etc/xdg/autostart/gnome-flashback-screensaver.desktop 3.18.2-1~ gnome-flashback-common

@@ -1,0 +1,6 @@
+usr/bin/
+usr/lib/${DEB_HOST_MULTIARCH}/gnome-panel/modules/system_indicators.so
+usr/libexec/gnome-flashback-clipboard
+usr/libexec/gnome-flashback-idle-monitor
+usr/libexec/gnome-flashback-media-keys
+usr/share/applications/

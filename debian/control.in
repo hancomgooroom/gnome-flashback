@@ -1,0 +1,103 @@
+Source: gnome-flashback
+Section: gnome
+Priority: optional
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Uploaders: @GNOME_TEAM@
+Build-Depends: debhelper-compat (= 13),
+               gnome-pkg-tools (>= 0.17),
+               gsettings-desktop-schemas-dev (>= 3.31.0),
+               libasound2-dev,
+               libcanberra-gtk3-dev (>= 0.13),
+               libgdk-pixbuf2.0-dev (>= 2.32.2),
+               libgdm-dev,
+               libglib2.0-dev (>= 2.67.3),
+               libgnome-bluetooth-3.0-dev,
+               libgnome-desktop-3-dev (>= 43),
+               libgnome-panel-dev (>= 3.37.0),
+               libgtk-3-dev (>= 3.22.0),
+               libibus-1.0-dev (>= 1.5.2),
+               libpam0g-dev,
+               libpango1.0-dev,
+               libpolkit-agent-1-dev (>= 0.97),
+               libpolkit-gobject-1-dev (>= 0.97),
+               libpulse-dev,
+               libsystemd-dev,
+               libupower-glib-dev (>= 0.99.0),
+               libx11-dev,
+               libx11-xcb-dev,
+               libxcb-randr0-dev,
+               libxext-dev,
+               libxfixes-dev,
+               libxi-dev (>= 1.6.0),
+               libxkbfile-dev,
+               libxrandr-dev (>= 1.5.0),
+               libxxf86vm-dev (>= 1.1.4),
+               xkb-data
+Rules-Requires-Root: no
+Standards-Version: 4.6.1
+Vcs-Browser: https://salsa.debian.org/gnome-team/gnome-flashback
+Vcs-Git: https://salsa.debian.org/gnome-team/gnome-flashback.git
+Homepage: https://wiki.gnome.org/Projects/GnomeFlashback
+
+Package: gnome-flashback
+Architecture: any
+Depends: gnome-flashback-common (= ${source:Version}),
+         nautilus (>= 3.37.1.1),
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: dbus, gnome-settings-daemon (>= 3.33.90), libpam-gnome-keyring
+Suggests: gnome-power-manager
+Provides: notification-daemon, polkit-1-auth-agent
+Description: helper application for the GNOME Flashback session
+ GNOME Flashback continues the traditional desktop interface which was used
+ in GNOME 2.x, but using modern GNOME technologies.
+ .
+ This package provides a helper application for the GNOME Flashback
+ desktop session. This application:
+  - provides the Logout, Reboot and Shutdown dialogs;
+  - provides the Sound, Bluetooth and Power tray applets;
+  - implements screenshot and screencast functionality;
+  - implements input source switching functionality;
+  - draws desktop background and icons;
+  - implements other functionality which was previously handled by
+    gnome-settings-daemon.
+
+Package: gnome-flashback-common
+Architecture: all
+Depends: ${misc:Depends}
+Breaks: libglib2.0-bin (<< 2.57.2)
+Description: GNOME Flashback helper application - common data files
+ GNOME Flashback continues the traditional desktop interface which was used
+ in GNOME 2.x, but using modern GNOME technologies.
+ .
+ This package contains translations and data files for the GNOME
+ Flashback application.
+
+Package: gnome-session-flashback
+Architecture: all
+Depends: gnome-flashback (>= 3.36.3),
+         gnome-panel (>= 3.14),
+         gnome-session-bin (>= 3.33.92),
+         gnome-session-common,
+         gnome-settings-daemon (>= 3.33.90),
+         metacity (>= 1:3.30.1),
+         ${misc:Depends}
+Recommends: gnome-power-manager
+Suggests: desktop-base, gnome-keyring, gnome-user-docs
+Provides: x-session-manager
+Breaks: gnome-flashback-common (<< 3.35.2-1~)
+Replaces: gnome-flashback-common (<< 3.35.2-1~)
+Description: traditional desktop session based on GNOME technologies
+ GNOME Flashback continues the traditional desktop interface which was used
+ in GNOME 2.x, but using modern GNOME technologies.
+ .
+ The key parts of GNOME Flashback are the GNOME Panel and the Metacity
+ window manager. All other components, such as the file manager, the
+ settings center, and the various applications, come from mainstream
+ GNOME.
+ .
+ GNOME Flashback has lower hardware requirements than GNOME Shell, and
+ consumes less memory.
+ .
+ This package provides the required components for the GNOME Flashback
+ session. It can be started from a display manager such as GDM.

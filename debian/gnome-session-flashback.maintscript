@@ -1,0 +1,1 @@
+rm_conffile /etc/xdg/autostart/gnome-flashback-screensaver.desktop 3.36.0-3~ gnome-session-flashback
