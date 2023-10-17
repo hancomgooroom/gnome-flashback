@@ -1,0 +1,1685 @@
+diff --git a/configure.ac b/configure.ac
+index a903689..66173eb 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -415,6 +415,8 @@ AC_CONFIG_FILES([
+   data/keybindings/Makefile
+   data/menus/Makefile
+   data/schemas/Makefile
++  data/screensaver/Makefile
++  data/screensaver/images/Makefile
+   data/sessions/Makefile
+   data/systemd/Makefile
+   data/theme/Makefile
+diff --git a/data/Makefile.am b/data/Makefile.am
+index 08ee025..e353be5 100644
+--- a/data/Makefile.am
++++ b/data/Makefile.am
+@@ -9,6 +9,7 @@ SUBDIRS = \
+ 	keybindings \
+ 	menus \
+ 	schemas \
++	screensaver \
+ 	sessions \
+ 	systemd \
+ 	theme \
+diff --git a/data/screensaver/Makefile.am b/data/screensaver/Makefile.am
+new file mode 100644
+index 0000000..0d53377
+--- /dev/null
++++ b/data/screensaver/Makefile.am
+@@ -0,0 +1,7 @@
++NULL =
++
++SUBDIRS = \
++	images \
++	$(NULL)
++
++-include $(top_srcdir)/git.mk
+diff --git a/data/screensaver/images/Makefile.am b/data/screensaver/images/Makefile.am
+new file mode 100644
+index 0000000..eaaa50e
+--- /dev/null
++++ b/data/screensaver/images/Makefile.am
+@@ -0,0 +1,9 @@
++NULL =
++
++EXTRA_DIST = \
++	gooroom-screensaver-logo.svg \
++	gooroom-screensaver-logout.svg \
++	gooroom-screensaver-entry-arrow.svg \
++	$(NULL)
++
++-include $(top_srcdir)/git.mk
+diff --git a/data/screensaver/images/gooroom-screensaver-entry-arrow.svg b/data/screensaver/images/gooroom-screensaver-entry-arrow.svg
+new file mode 100644
+index 0000000..0c2be25
+--- /dev/null
++++ b/data/screensaver/images/gooroom-screensaver-entry-arrow.svg
+@@ -0,0 +1,3 @@
++<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
++    <path d="M4 12a1 1 0 0 1 1-1l10.385.001-3.021-3.022a1 1 0 1 1 1.414-1.414l5.364 5.364-5.364 5.364a1 1 0 1 1-1.414-1.414L15.241 13 5 13a1 1 0 0 1-1-1z" fill="#FFF" fill-rule="evenodd"/>
++</svg>
+diff --git a/data/screensaver/images/gooroom-screensaver-logo.svg b/data/screensaver/images/gooroom-screensaver-logo.svg
+new file mode 100644
+index 0000000..04ccaae
+--- /dev/null
++++ b/data/screensaver/images/gooroom-screensaver-logo.svg
+@@ -0,0 +1,12 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="100" height="114" viewBox="0 0 100 114">
++    <g fill="none" fill-rule="evenodd">
++        <g fill="#FFF">
++            <g>
++                <g>
++                    <path d="M100 53.025v2.5l-17.013 9.813L81 66.488l-3.612 2.087-39.1 22.55-3.425 1.987L33 94.188c-.122-.335-.269-.661-.438-.975-.186-.307-.395-.6-.624-.875-1.233-1.49-3.068-2.347-5-2.338-.457.035-.91.115-1.35.237-.655.137-1.284.377-1.863.713l-.052.037c-.05.044-.092.1-.148.1-2.562 1.63-3.644 4.824-2.6 7.675.12.339.27.665.45.975.178.31.383.602.613.876l-1.863 1.075-3.425 1.974L0 113.3v-2.5l15.637-9.063 3.425-1.974c-.816-1.935-.892-4.102-.212-6.088.16-.477.365-.937.612-1.375.647-1.185 1.569-2.196 2.688-2.95l.513-.3.342-.185c.346-.178.703-.333 1.07-.465 1.449-.507 3.008-.615 4.512-.313 2.062.397 3.903 1.546 5.163 3.225l3.438-1.987 38.624-22.288L79.326 65l1.925-1.1L100 53.025zM14.787 93.6c-.202.87-.311 1.758-.325 2.65L0 104.638v-2.5zm21.217-72.84c7.598-4.252 16.257-6.249 24.959-5.748 1.224.063 2.387.188 3.637.35 2.633.348 5.23.925 7.763 1.725.887.288 1.762.6 2.637.938 2.042.79 4.022 1.73 5.925 2.813.713.4 1.413.825 2.1 1.25l1.487.962c-.737.337-1.462.712-2.174 1.113-.463-.3-.938-.576-1.413-.863-.708-.45-1.433-.867-2.175-1.25-2-1.023-4.077-1.888-6.213-2.588-.925-.312-1.85-.6-2.787-.85-2.729-.729-5.52-1.197-8.337-1.4-1.025-.112-2.05-.112-3.088-.112h-1.013c-7.338.16-14.518 2.167-20.874 5.837l-.579.34c-6.138 3.66-11.286 8.775-14.984 14.898-.7 1.163-1.363 2.338-1.95 3.588-1.236 2.531-2.224 5.177-2.95 7.9l-.18.705c-.175.707-.33 1.42-.47 2.132-.464 2.175-.765 4.38-.9 6.6v2.5c.027 1.983.185 3.963.475 5.925.112.75.25 1.487.4 2.225.372 1.82.856 3.615 1.45 5.375.238.675.488 1.35.75 2.013.686 1.67 1.47 3.298 2.35 4.874l.512.938c.176.313.376.6.563.9l-1.838 1.063-3.425 2.012L0 95.975v-2.5L14.6 85l3.475-1.875c-.864-1.575-1.636-3.198-2.313-4.862-.274-.663-.524-1.338-.762-2.013-.65-1.736-1.193-3.51-1.625-5.313-.162-.737-.3-1.474-.425-2.212-.335-1.934-.54-3.888-.612-5.85v-2.5c.036-2.19.228-4.375.575-6.538.15-.925.312-1.837.524-2.75.15-.675.3-1.35.488-2.025.512-1.886 1.138-3.74 1.875-5.55.462-1.137.962-2.237 1.5-3.325 4.044-8.013 10.356-14.66 18.15-19.112zm57.446 3.902c2.184-.198 4.385-.084 6.537.338v2.188l-.606-.116c-1.215-.212-2.447-.32-3.681-.322h-.888c-1.627.065-3.242.316-4.812.75-.784.198-1.556.44-2.313.725-.923.38-1.82.818-2.687 1.313-4.507 2.61-7.907 6.774-9.563 11.712-.313.953-.563 1.926-.75 2.913-.391 2.089-.471 4.224-.237 6.337.078.756.199 1.507.362 2.25.405 1.781 1.035 3.503 1.876 5.125.162.313.312.65.487.95.175.3.375.587.575.887l-1.838 1.063L72.5 62.75l-39.462 22.8c-.791-.441-1.63-.79-2.5-1.037L71.475 60.9l3.413-1.962c-.848-1.614-1.503-3.321-1.95-5.088-.175-.725-.326-1.462-.438-2.2-.314-2.048-.356-4.129-.125-6.188.103-.916.258-1.825.463-2.725.69-3.013 1.964-5.863 3.75-8.387 1.935-2.74 4.443-5.026 7.35-6.7.687-.362 1.275-.688 1.937-1 .738-.343 1.493-.647 2.263-.912 1.525-.52 3.1-.88 4.7-1.075z" transform="translate(-740 -401) translate(650 300) translate(90 101)"/>
++                    <path d="M11.475 78.188c.25.674.513 1.337.787 2.05L0 87.325v-2.5zm-2.1-7.438c.15.725.313 1.467.488 2.225L0 78.663v-2.5zm-.938-8.125c.026.8.075 1.588.138 2.375L0 70v-2.5zm.526-8.962c-.125.875-.213 1.75-.313 2.675l-8.65 5v-2.5zM11.575 43.5c-.325 1-.7 2.013-1.012 3.075L0 52.675v-2.5zm6.938-12.675c-1.013 1.313-1.9 2.662-2.75 4.05L0 44.013v-2.5zM61.162 0L0 35.313v-2.45L56.913 0h4.25zm-15 0L0 26.65V24.2L41.913 0h4.25zM100 9.713v2.5l-13.175 7.612c-.663-.45-1.325-.887-2-1.363L100 9.712zM31.162 0L0 17.988v-2.45L26.913 0h4.25zM100 1.063v2.5L79.3 15.537c-.862-.362-1.675-.712-2.5-1.037L100 1.062zM91.162 0L69.837 12.313c-1.087-.238-2.087-.463-3.137-.638L86.912 0h4.25zm-15 0L57.125 10.988c-1.625.037-3.25.162-4.875.362L71.912 0h4.25zm-60 0L0 9.325v-2.45L11.912 0h4.25z" transform="translate(-740 -401) translate(650 300) translate(90 101)"/>
++                </g>
++            </g>
++        </g>
++    </g>
++</svg>
+diff --git a/data/screensaver/images/gooroom-screensaver-logout.svg b/data/screensaver/images/gooroom-screensaver-logout.svg
+new file mode 100644
+index 0000000..9d64b35
+--- /dev/null
++++ b/data/screensaver/images/gooroom-screensaver-logout.svg
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
++    <title>9F950CFA-94B4-453F-B7B7-6AF3DA7A6F73</title>
++    <g id="UI" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
++        <g id="Icons" transform="translate(-654.000000, -3752.000000)" fill="#FFFFFF">
++            <g id="Group" transform="translate(600.000000, 3050.000000)">
++                <g id="ic/control-tower/logout/rest" transform="translate(54.000000, 702.000000)">
++                    <g id="ic/control-tower/power/rest" transform="translate(1.000000, 2.000000)">
++                        <g id="owl" transform="translate(0.000000, -0.000000)">
++                            <g id="setting-icon" transform="translate(0.000000, -0.000000)">
++                                <path d="M10,12 L10,14 C4.4939534,14 2,15.7813953 2,19.4285714 C2,19.9808562 1.55228475,20.4285714 1,20.4285714 C0.44771525,20.4285714 0,19.9808562 0,19.4285714 C0,14.504319 3.5060466,12 10,12 Z M17.7781746,10.7071068 L22.1421356,15.0710678 L17.7781746,19.4350288 C17.3876503,19.8255531 16.7544853,19.8255531 16.363961,19.4350288 C15.9734367,19.0445046 15.9734367,18.4113396 16.363961,18.0208153 L18.2426407,16.1421356 L13,16.1421356 C12.4477153,16.1421356 12,15.6944204 12,15.1421356 C12,14.5898509 12.4477153,14.1421356 13,14.1421356 L18.3847763,14.1421356 L16.363961,12.1213203 C15.9734367,11.7307961 15.9734367,11.0976311 16.363961,10.7071068 C16.7544853,10.3165825 17.3876503,10.3165825 17.7781746,10.7071068 Z M10,-3.90798505e-13 C12.7614237,-3.90798505e-13 15,2.23857625 15,5 C15,7.76142375 12.7614237,10 10,10 C7.23857625,10 5,7.76142375 5,5 C5,2.23857625 7.23857625,-3.90798505e-13 10,-3.90798505e-13 Z M10,2 C8.34314575,2 7,3.34314575 7,5 C7,6.65685425 8.34314575,8 10,8 C11.6568542,8 13,6.65685425 13,5 C13,3.34314575 11.6568542,2 10,2 Z" id="Combined-Shape"></path>
++                            </g>
++                        </g>
++                    </g>
++                </g>
++            </g>
++        </g>
++    </g>
++</svg>
+\ No newline at end of file
+diff --git a/data/screensaver/theme/Makefile.am b/data/screensaver/theme/Makefile.am
+new file mode 100644
+index 0000000..f17744f
+--- /dev/null
++++ b/data/screensaver/theme/Makefile.am
+@@ -0,0 +1,8 @@
++NULL =
++
++EXTRA_DIST = \
++	theme.css \
++	default.css \
++	$(NULL)
++
++-include $(top_srcdir)/git.mk
+diff --git a/data/screensaver/theme/default.css b/data/screensaver/theme/default.css
+new file mode 100644
+index 0000000..dc01a2a
+--- /dev/null
++++ b/data/screensaver/theme/default.css
+@@ -0,0 +1,20 @@
++/*
++gf-screensaver-panel-bottom {
++  font-weight: bold;
++  padding: 204px 10px;
++  background: rgba (0, 0, 0, 0.8);
++  color: #cccccc;
++}
++*/
++
++gf-screensaver-panel-bottom button {
++  font-size:80px;
++  color: #000000;
++  background: yellow !important;
++  background-color: yellow !important;
++}
++
++gf-screensaver-panel-bottom button:hover {
++  background: yellow !important;
++  background-color: yellow !important;
++}
+diff --git a/data/screensaver/theme/theme.css b/data/screensaver/theme/theme.css
+new file mode 100644
+index 0000000..315ac5f
+--- /dev/null
++++ b/data/screensaver/theme/theme.css
+@@ -0,0 +1,94 @@
++
++/*
++* {
++  outline-color: transparent;
++  font-family: Sans Regular;
++  text-shadow: none;
++  -gtk-icon-effect: none;
++  -gtk-icon-shadow: none; }
++
++
++#panel_box {
++  border: none;
++  box-shadow: none;
++  background-image: none;
++  background-color: rgba(0, 0, 0, 0.8);
++  min-height: 40px; }
++  #panel_box #panel_button {
++    color: #ffffff;
++    border: none;
++    border-radius: 0;
++    box-shadow: none;
++    background-image: none;
++    background-color: transparent; }
++    #panel_box #panel_button:hover {
++      background: rgba(255, 255, 255, 0.4); }
++    #panel_box #panel_button:active,
++    #panel_box #panel_button:checked  {
++      background: rgba(0, 255, 255, 0.6); }
++    #panel_box #panel_button:disabled {
++      color: @insensitive_fg_color; }
++  #panel_box #indicator_button {
++    color: #ffffff;
++    padding: 0;
++    border-radius: 0;
++    border: none;
++    background-color: transparent; }
++    #panel_box #indicator_button:hover {
++      border: none;
++      background-color: rgba(255, 255, 255, 0.5); }
++    #panel_box #indicator_button:active,
++    #panel_box #indicator_button:checked {
++      background-color: rgba(0, 255, 255, 0.6); }
++*/
++
++/*
++#login_window {
++  min-height: 400px;
++  min-width: 560px;
++  border-radius: 16px;
++  background-color: #1c1c1c;
++  box-shadow: 0 2px 8px 3px rgba(0, 0, 0, 0.85); }
++  #login_window #cloud_auth_box {
++    padding: 20px;
++    color: #000000;;
++    border-radius: 0 16px 16px 0;
++    background-color: #ffffff; }
++  #login_window #local_auth_box {
++    padding: 40px;
++    color: #000000;;
++    border-radius: 0 16px 16px 0;
++    background-color: #ffffff; }
++  #login_window #unlock_button {
++    padding: 5px;
++    border: none;
++    border-radius: 5px;
++    color: #ffffff;
++    box-shadow: none;
++    background-image: none;
++    background-color: #3986e1;}
++    #login_window #unlock_button:hover {
++      background-color: #69d3ff; }
++    #login_window #unlock_button:active, #login_window #unlock_button:checked {
++      background-color: #00b3fe; }
++  #login_window #prompt_entry {
++    min-height: 34px;
++    padding: 0 34px 0 6px;
++    color: #000000;
++    border: 1px solid rgba(201, 201, 201, 0.6);
++    border-radius: 5px;
++    background-image: none;
++    background-color: rgba(201, 201, 201, 0.6);
++    box-shadow: none; }
++    #login_window #prompt_entry:focus,
++    #login_window #prompt_entry:hover {
++      border-color: #4a90e2;
++      background-color: #ffffff; }
++
++#greeter_infobar {
++  background-color: transparent;
++  border-bottom-width: 0;
++  font-weight: bold; }
++  #greeter_infobar label {
++    color: #ff0000; }
++*/
+diff --git a/data/theme/Makefile.am b/data/theme/Makefile.am
+index ca0c59a..6e26686 100644
+--- a/data/theme/Makefile.am
++++ b/data/theme/Makefile.am
+@@ -9,6 +9,7 @@ SUBDIRS = \
+ EXTRA_DIST = \
+ 	common.css \
+ 	fallback.css \
++	gooroom.css \
+ 	$(NULL)
+ 
+ -include $(top_srcdir)/git.mk
+diff --git a/data/theme/common.css b/data/theme/common.css
+index 2193a87..c3d3d3d 100644
+--- a/data/theme/common.css
++++ b/data/theme/common.css
+@@ -1,3 +1,5 @@
++@import url("resource:///org/gnome/gnome-flashback/theme/gooroom.css");
++
+ gf-screensaver-panel {
+   font-weight: bold;
+   padding: 4px 10px;
+diff --git a/data/theme/gooroom.css b/data/theme/gooroom.css
+new file mode 100644
+index 0000000..becab5f
+--- /dev/null
++++ b/data/theme/gooroom.css
+@@ -0,0 +1,126 @@
++gf-screensaver-panel,gf-unlock-dialog,gf-screensaver-panel-bottom {
++  outline-color: transparent;
++  transition: none;
++  text-shadow: none;
++  box-shadow: none;
++  background: none;
++  -gtk-icon-effect: none;
++  -gtk-icon-shadow: none;
++}
++
++gf-screensaver-panel-bottom  {
++  margin: 0px 20px 20px 21px;
++  color: #fff;
++  background-color: transparent;
++}
++
++gf-screensaver-panel-bottom box,
++gf-screensaver-panel-bottom label {
++  border:none;
++}
++
++gf-screensaver-panel-bottom image {
++  margin-right: 10px;
++  padding: 0;
++}
++
++gf-screensaver-panel-bottom label {
++  font-size: 100%;
++  font-weight: 500;
++  color: #fff;
++}
++
++gf-screensaver-panel-bottom button {
++  padding: 0;
++  margin: 0;
++  color: #ffffff;
++  font-size: 100%;
++  #font-weight: 500;
++  border: none;
++  border-radius: 0;
++  color: transparent;
++  background : none;
++  box-shadow: none;
++  opacity: 0.8;
++}
++
++gf-screensaver-panel-bottom button:hover {
++  box-shadow: none;
++  opacity: 1.0;
++}
++
++gf-screensaver-panel-bottom button:active,
++gf-screensaver-panel-bottom button:checked {
++  box-shadow: none;
++  opacity: 1.0;
++}
++
++gf-screensaver-panel-bottom button:disabled {
++  box-shadow: none;
++  color: rgba(255, 255, 255, 0.3);
++}
++
++#auth_title_label {
++  color: #ffffff;
++  font-size: 180%;
++  font-weight: 600;
++}
++
++#auth_message_label{
++  font-size: 110%;
++  font-weight: bold;
++  color: #ffffff;
++}
++
++#auth_entry_box {
++  padding: 16px 10px 10px;
++  border-radius: 30px;
++  background-color: rgba(0, 0, 0, 0.3);
++}
++
++#auth_user_label {
++  font-size: 130%;
++  border: none;
++  box-shadow: none;
++  color: rgba(255, 255, 255, 0.6);
++}
++
++#auth_prompt_entry {
++  padding: 10px 50px 10px 20px;
++  color: rgba(0, 1, 0, 0.5);
++  border: none;
++  border-radius: 38px;
++  background-color: rgba(255, 255, 255, 0.8);
++  box-shadow: none;
++}
++
++#auth_unlock_button {
++  #padding: 7px;
++  border: none;
++  border-radius: 50%;
++  color: #ffffff;
++  box-shadow: none;
++  background-image: none;
++  background-color: #3986e1;
++}
++
++#auth_unlock_button:hover {
++  background-color: #69d3ff;
++}
++
++#auth_unlock_button:active, #auth_unlock_button:checked {
++  background-color: #00b3fe;
++}
++
++#auth_unlock_button:disabled {
++  background-color: @insensitive_fg_color;
++}
++
++gf-icon:selected label {
++  background-color: @theme_selected_bg_color;
++  color: #ffffff;
++}
++
++gf-icon:selected image{
++  -gtk-icon-effect: dim;
++}
+diff --git a/gnome-flashback/flashback.gresource.xml b/gnome-flashback/flashback.gresource.xml
+index 3721871..e91fa9b 100644
+--- a/gnome-flashback/flashback.gresource.xml
++++ b/gnome-flashback/flashback.gresource.xml
+@@ -8,12 +8,20 @@
+     <file alias="Yaru/gnome-flashback.css">../data/theme/Yaru/gnome-flashback.css</file>
+     <file alias="common.css">../data/theme/common.css</file>
+     <file alias="fallback.css">../data/theme/fallback.css</file>
++    <file alias="gooroom.css">../data/theme/gooroom.css</file>
+   </gresource>
+   <gresource prefix="/org/gnome/gnome-flashback/ui">
+     <file alias="gf-confirm-display-change-dialog.ui" compressed="true">../data/ui/gf-confirm-display-change-dialog.ui</file>
++    <file alias="gf-unlock-dialog.ui" compressed="true">libscreensaver/gf-unlock-dialog.ui</file>
+   </gresource>
+   <gresource prefix="/org/gnome/gnome-flashback">
+     <file alias="gf-inhibit-dialog.ui" compressed="true">libend-session-dialog/gf-inhibit-dialog.ui</file>
+     <file alias="flashback-polkit-dialog.ui" compressed="true">libpolkit/flashback-polkit-dialog.ui</file>
+   </gresource>
++  <gresource prefix="/org/gnome/gnome-flashback/screensaver">
++    <file alias="logo.svg">../data/screensaver/images/gooroom-screensaver-logo.svg</file>
++    <file alias="logout.svg">../data/screensaver/images/gooroom-screensaver-logout.svg</file>
++    <file alias="arrow.svg">../data/screensaver/images/gooroom-screensaver-entry-arrow.svg</file>
++  </gresource>
++
+ </gresources>
+diff --git a/gnome-flashback/gf-application.c b/gnome-flashback/gf-application.c
+index 0023199..1f3e248 100644
+--- a/gnome-flashback/gf-application.c
++++ b/gnome-flashback/gf-application.c
+@@ -171,7 +171,7 @@ theme_changed (GtkSettings *settings,
+   else
+     {
+       resource = g_strdup ("/org/gnome/gnome-flashback/theme/fallback.css");
+-      priority = GTK_STYLE_PROVIDER_PRIORITY_FALLBACK;
++      priority = GTK_STYLE_PROVIDER_PRIORITY_APPLICATION;
+     }
+ 
+   css = gtk_css_provider_new ();
+diff --git a/gnome-flashback/libscreensaver/Makefile.am b/gnome-flashback/libscreensaver/Makefile.am
+index 5829927..1d7c61f 100644
+--- a/gnome-flashback/libscreensaver/Makefile.am
++++ b/gnome-flashback/libscreensaver/Makefile.am
+@@ -38,6 +38,8 @@ libscreensaver_la_SOURCES = \
+ 	gf-manager.h \
+ 	gf-panel.c \
+ 	gf-panel.h \
++	gf-panel-bottom.h \
++	gf-panel-bottom.c \
+ 	gf-prefs.c \
+ 	gf-prefs.h \
+ 	gf-screensaver.c \
+@@ -81,7 +83,15 @@ gf-screensaver-enum-types.h: gf-screensaver-enum-types.h.in $(ENUM_TYPES) Makefi
+ 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(srcdir)/gf-screensaver-enum-types.h.in $(ENUM_TYPES) > \
+ 		gf-screensaver-enum-types.h.tmp && mv gf-screensaver-enum-types.h.tmp gf-screensaver-enum-types.h
+ 
+++resource_files = $(shell glib-compile-resources --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/gresource.xml)
++gfd-resources.c: gresource.xml $(resource_files)
++	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(srcdir) --generate-source --c-name gfd $<
++gfd-resources.h: gresource.xml $(resource_files)
++	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(srcdir) --generate-header --c-name gfd $<
++
+ BUILT_SOURCES = \
++	gfd-resources.c \
++	gfd-resources.h \
+ 	gf-screensaver-enum-types.c \
+ 	gf-screensaver-enum-types.h \
+ 	$(NULL)
+diff --git a/gnome-flashback/libscreensaver/gf-panel-bottom.c b/gnome-flashback/libscreensaver/gf-panel-bottom.c
+new file mode 100644
+index 0000000..2a0fd6e
+--- /dev/null
++++ b/gnome-flashback/libscreensaver/gf-panel-bottom.c
+@@ -0,0 +1,171 @@
++/*
++ * Copyright (C) 2019 Alberts Muktupāvels
++ *
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include "config.h"
++#include "gf-panel-bottom.h"
++#include <glib/gi18n.h>
++#include <libgnome-desktop/gnome-wall-clock.h>
++
++#define LOGOUT_COMMAND  "/usr/bin/gnome-session-quit --force"
++
++
++struct _GfPanelBottom
++{
++  GtkBox          parent;
++
++  GtkWidget      *clock_label;
++  GnomeWallClock *clock;
++
++  GtkCssProvider *provider;
++};
++
++G_DEFINE_TYPE (GfPanelBottom, gf_panel_bottom, GTK_TYPE_BOX)
++
++static gboolean
++button_press (GtkButton     *button,
++              GfPanelBottom *self)
++{
++    char   **argv  = NULL;
++    GError  *error = NULL;
++    gboolean res;
++
++    res = g_shell_parse_argv (LOGOUT_COMMAND, NULL, &argv, &error);
++
++    if (!res) {
++        g_warning ("Could not parse logout command: %s", error->message);
++        g_error_free (error);
++        return FALSE;
++    }
++
++    g_spawn_async (g_get_home_dir (),
++                   argv,
++                   NULL,
++                   G_SPAWN_SEARCH_PATH,
++                   NULL,
++                   NULL,
++                   NULL,
++                   &error);
++
++    g_strfreev (argv);
++
++    if (error) {
++        g_warning ("Could not run logout command: %s", error->message);
++        g_error_free (error);
++    }
++
++
++  return TRUE;
++}
++
++static void
++update_clock (GfPanelBottom *self)
++{
++    const char *string;
++
++    string = gnome_wall_clock_get_clock (self->clock);
++    gtk_label_set_label (GTK_LABEL (self->clock_label), string);
++}
++
++static void
++clock_changed_cb (GnomeWallClock *clock,
++                  GParamSpec     *pspec,
++                  GfPanelBottom        *self)
++{
++    update_clock (self);
++}
++
++static void
++gf_panel_bottom_dispose (GObject *object)
++{
++    GfPanelBottom *self;
++
++    self = GF_PANEL_BOTTOM (object);
++
++    g_clear_object (&self->clock);
++
++    g_clear_object (&self->provider);
++
++    G_OBJECT_CLASS (gf_panel_bottom_parent_class)->dispose (object);
++}
++
++static void
++gf_panel_bottom_class_init (GfPanelBottomClass *self_class)
++{
++    GObjectClass *object_class;
++    GtkWidgetClass *widget_class;
++
++    object_class = G_OBJECT_CLASS (self_class);
++    widget_class = GTK_WIDGET_CLASS (self_class);
++
++    object_class->dispose = gf_panel_bottom_dispose;
++
++    gtk_widget_class_set_css_name (widget_class, "gf-screensaver-panel-bottom");
++
++}
++
++static void
++gf_panel_bottom_init (GfPanelBottom *self)
++{
++    GtkWidget *left_hbox, *right_hbox;
++    GtkWidget *logout_button;
++    GdkPixbuf *pixbuf = NULL;
++    GtkWidget *logout_image = gtk_image_new ();
++
++    self->clock = gnome_wall_clock_new ();
++
++    g_signal_connect (self->clock, "notify::clock",
++                      G_CALLBACK (clock_changed_cb),
++                      self);
++
++    left_hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
++    gtk_box_pack_start (GTK_BOX (self), left_hbox, FALSE, FALSE, 0);
++    gtk_widget_show (left_hbox);
++
++    logout_button = gtk_button_new_with_label (_("logout"));
++    gtk_container_add (GTK_CONTAINER (left_hbox), logout_button);
++    gtk_widget_show (logout_button);
++
++    g_signal_connect (logout_button, "clicked", G_CALLBACK (button_press), self);
++
++    pixbuf = gdk_pixbuf_new_from_resource ("/org/gnome/gnome-flashback/screensaver/logout.svg", NULL);
++    if (pixbuf)
++      {
++        gtk_image_set_from_pixbuf (GTK_IMAGE (logout_image), pixbuf);
++        gtk_button_set_image (GTK_BUTTON(logout_button), logout_image);
++        gtk_widget_show (logout_image);
++        g_object_unref (pixbuf);
++      }
++
++    right_hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
++    gtk_box_pack_end (GTK_BOX (self), right_hbox, TRUE, TRUE, 0);
++    gtk_widget_show (right_hbox);
++
++    self->clock_label = gtk_label_new (NULL);
++    gtk_box_pack_end (GTK_BOX (right_hbox), self->clock_label, FALSE, FALSE, 0);
++    gtk_widget_show (self->clock_label);
++
++    update_clock (self);
++}
++
++GtkWidget *
++gf_panel_bottom_new (void)
++{
++    return g_object_new (GF_TYPE_PANEL_BOTTOM,
++                         "orientation", GTK_ORIENTATION_HORIZONTAL,
++                         "spacing", 12,
++                         NULL);
++}
+diff --git a/gnome-flashback/libscreensaver/gf-panel-bottom.h b/gnome-flashback/libscreensaver/gf-panel-bottom.h
+new file mode 100644
+index 0000000..393acb8
+--- /dev/null
++++ b/gnome-flashback/libscreensaver/gf-panel-bottom.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2019 Alberts Muktupāvels
++ *
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef GF_PANEL_BOTTOM_H
++#define GF_PANEL_BOTTOM_H
++
++#include <gtk/gtk.h>
++
++G_BEGIN_DECLS
++
++#define GF_TYPE_PANEL_BOTTOM (gf_panel_bottom_get_type ())
++G_DECLARE_FINAL_TYPE (GfPanelBottom, gf_panel_bottom, GF, PANEL_BOTTOM, GtkBox)
++
++GtkWidget *gf_panel_bottom_new (void);
++
++G_END_DECLS
++
++#endif
+diff --git a/gnome-flashback/libscreensaver/gf-unlock-dialog.c b/gnome-flashback/libscreensaver/gf-unlock-dialog.c
+index 6d4d411..901d537 100644
+--- a/gnome-flashback/libscreensaver/gf-unlock-dialog.c
++++ b/gnome-flashback/libscreensaver/gf-unlock-dialog.c
+@@ -21,6 +21,7 @@
+ #include "gf-unlock-dialog.h"
+ 
+ #include <gdm/gdm-user-switching.h>
++#include <glib/gstdio.h>
+ #include <glib/gi18n.h>
+ 
+ #include "dbus/gf-dm-seat-gen.h"
+@@ -28,7 +29,7 @@
+ #include "gf-user-image.h"
+ #include "gf-screensaver-enum-types.h"
+ 
+-#define DIALOG_TIMEOUT_MSEC 60000
++//#define DIALOG_TIMEOUT_MSEC 60000
+ #define MAX_FAILURES 5
+ 
+ struct _GfUnlockDialog
+@@ -41,26 +42,13 @@ struct _GfUnlockDialog
+ 
+   GfAuth         *auth;
+ 
+-  GtkWidget      *face_image;
+-  GtkWidget      *prompt_label;
+-  GtkWidget      *prompt_entry;
+-  GtkWidget      *capslock_label;
+-
+-  GtkWidget      *message_label;
+-
+-  GtkWidget      *buttons_box;
+-  GtkWidget      *switch_button;
+-  GtkWidget      *unlock_button;
+-
+-  gboolean        user_switch_enabled;
+-
+-  gulong          keymap_state_changed_id;
+-
+-  guint           cancel_timeout_id;
+-  guint           emit_cancel_id;
+-
+-  GtkWidget      *indicator_box;
+-  GtkWidget      *input_source_button;
++  GtkWidget      *auth_title_image;
++  GtkWidget      *auth_title_label;
++  GtkWidget      *auth_user_label;
++  GtkWidget      *auth_prompt_entry;
++  GtkWidget      *auth_message_label;
++  GtkWidget      *auth_unlock_button;
++  GtkWidget      *auth_unlock_image;
+ 
+   guint           failure_count;
+ 
+@@ -85,9 +73,8 @@ static void
+ set_sensitive (GfUnlockDialog *self,
+                gboolean        sensitive)
+ {
+-  gtk_widget_set_sensitive (self->prompt_entry, sensitive);
+-  gtk_widget_set_sensitive (self->indicator_box, sensitive);
+-  gtk_widget_set_sensitive (self->buttons_box, sensitive);
++  gtk_widget_set_sensitive (self->auth_unlock_button, sensitive);
++  gtk_widget_set_sensitive (self->auth_prompt_entry, sensitive);
+ }
+ 
+ static void
+@@ -97,7 +84,7 @@ set_message (GfUnlockDialog *self,
+   if (message == NULL)
+     message = "";
+ 
+-  gtk_label_set_text (GTK_LABEL (self->message_label), message);
++  gtk_label_set_text (GTK_LABEL (self->auth_message_label), message);
+ }
+ 
+ static void
+@@ -134,157 +121,6 @@ set_ready (GfUnlockDialog *self)
+   g_clear_object (&cursor);
+ }
+ 
+-static gboolean
+-emit_cancel_cb (gpointer user_data)
+-{
+-  GfUnlockDialog *self;
+-
+-  self = GF_UNLOCK_DIALOG (user_data);
+-  self->emit_cancel_id = 0;
+-
+-  gtk_entry_set_text (GTK_ENTRY (self->prompt_entry), "");
+-
+-  g_signal_emit (self, unlock_dialog_signals[RESPONSE], 0,
+-                 GF_UNLOCK_DIALOG_RESPONSE_CANCEL);
+-
+-  return G_SOURCE_REMOVE;
+-}
+-
+-static void
+-emit_cancel_remove (GfUnlockDialog *self)
+-{
+-  if (self->emit_cancel_id == 0)
+-    return;
+-
+-  g_source_remove (self->emit_cancel_id);
+-  self->emit_cancel_id = 0;
+-}
+-
+-static void
+-emit_cancel_add (GfUnlockDialog *self)
+-{
+-  g_assert (self->emit_cancel_id == 0);
+-  self->emit_cancel_id = g_timeout_add_seconds (2, emit_cancel_cb, self);
+-
+-  g_source_set_name_by_id (self->emit_cancel_id,
+-                           "[gnome-flashback] emit_cancel_cb");
+-}
+-
+-static void
+-switch_to_greeter_failed (GfUnlockDialog *self)
+-{
+-  set_sensitive (self, FALSE);
+-  set_message (self, _("Failed to switch to greeter!"));
+-
+-  emit_cancel_add (self);
+-}
+-
+-static void
+-switch_to_greeter_cb (GObject      *object,
+-                      GAsyncResult *res,
+-                      gpointer      user_data)
+-{
+-  GError *error;
+-  GfUnlockDialog *self;
+-
+-  error = NULL;
+-  gf_dm_seat_gen_call_switch_to_greeter_finish (GF_DM_SEAT_GEN (object),
+-                                                res, &error);
+-
+-  if (error != NULL)
+-    {
+-      if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+-        {
+-          g_warning ("%s", error->message);
+-          switch_to_greeter_failed (GF_UNLOCK_DIALOG (user_data));
+-        }
+-
+-      g_error_free (error);
+-      return;
+-    }
+-
+-  self = GF_UNLOCK_DIALOG (user_data);
+-
+-  emit_cancel_add (self);
+-  set_ready (self);
+-}
+-
+-static void
+-switch_user (GfUnlockDialog *self)
+-{
+-  if (self->dm_seat != NULL)
+-    {
+-      gf_dm_seat_gen_call_switch_to_greeter (self->dm_seat,
+-                                             self->cancellable,
+-                                             switch_to_greeter_cb,
+-                                             self);
+-    }
+-  else
+-    {
+-      GError *error;
+-
+-      error = NULL;
+-      if (!gdm_goto_login_session_sync (NULL, &error))
+-        {
+-          g_warning ("Failed to switch to greeter: %s", error->message);
+-          switch_to_greeter_failed (self);
+-        }
+-      else
+-        {
+-          emit_cancel_add (self);
+-          set_ready (self);
+-        }
+-
+-      g_clear_error (&error);
+-    }
+-}
+-
+-static gboolean
+-cancel_timeout_cb (gpointer user_data)
+-{
+-  GfUnlockDialog *self;
+-
+-  self = GF_UNLOCK_DIALOG (user_data);
+-  self->cancel_timeout_id = 0;
+-
+-  set_sensitive (self, FALSE);
+-  set_message (self, _("Time has expired."));
+-
+-  emit_cancel_remove (self);
+-  emit_cancel_add (self);
+-
+-  return G_SOURCE_REMOVE;
+-}
+-
+-static void
+-cancel_timeout_remove (GfUnlockDialog *self)
+-{
+-  if (self->cancel_timeout_id == 0)
+-    return;
+-
+-  g_source_remove (self->cancel_timeout_id);
+-  self->cancel_timeout_id = 0;
+-}
+-
+-static void
+-cancel_timeout_add (GfUnlockDialog *self)
+-{
+-  g_assert (self->cancel_timeout_id == 0);
+-  self->cancel_timeout_id = g_timeout_add (DIALOG_TIMEOUT_MSEC,
+-                                           cancel_timeout_cb,
+-                                           self);
+-
+-  g_source_set_name_by_id (self->cancel_timeout_id,
+-                           "[gnome-flashback] cancel_timeout_cb");
+-}
+-
+-static void
+-cancel_timeout_restart (GfUnlockDialog *self)
+-{
+-  cancel_timeout_remove (self);
+-  cancel_timeout_add (self);
+-}
+-
+ static void
+ disable_prompt (GfUnlockDialog *self)
+ {
+@@ -296,24 +132,15 @@ enable_prompt (GfUnlockDialog *self,
+                const char     *message,
+                gboolean        visible)
+ {
+-  char *markup;
+-
+   g_debug ("Setting prompt to: %s", message);
+ 
+-  markup = g_strdup_printf ("<b><big>%s</big></b>", message);
+-  gtk_label_set_markup (GTK_LABEL (self->prompt_label), markup);
+-  gtk_widget_show (self->prompt_label);
+-  g_free (markup);
+-
+-  gtk_entry_set_visibility (GTK_ENTRY (self->prompt_entry), visible);
++  gtk_entry_set_visibility (GTK_ENTRY (self->auth_prompt_entry), visible);
+   set_sensitive (self, TRUE);
+ 
+-  if (!gtk_widget_has_focus (self->prompt_entry))
+-    gtk_widget_grab_focus (self->prompt_entry);
+-
+-  gtk_widget_grab_default (self->unlock_button);
++  if (!gtk_widget_has_focus (self->auth_prompt_entry))
++    gtk_widget_grab_focus (self->auth_prompt_entry);
+ 
+-  cancel_timeout_restart (self);
++  gtk_widget_grab_default (self->auth_unlock_button);
+ }
+ 
+ static void
+@@ -344,74 +171,11 @@ prompt_entry_button_press_event_cb (GtkWidget      *widget,
+   return FALSE;
+ }
+ 
+-static GtkWidget *
+-create_page_one_content (GfUnlockDialog *self)
+-{
+-  GtkWidget *hbox;
+-  GtkWidget *grid;
+-  char *markup;
+-
+-  hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+-
+-  grid = gtk_grid_new ();
+-  gtk_box_pack_start (GTK_BOX (hbox), grid, TRUE, TRUE, 0);
+-  gtk_grid_set_column_spacing (GTK_GRID (grid), 16);
+-  gtk_grid_set_row_spacing (GTK_GRID (grid), 6);
+-  gtk_widget_show (grid);
+-
+-  self->face_image = gf_user_image_new ();
+-  gtk_grid_attach (GTK_GRID (grid), self->face_image, 0, 0, 1, 2);
+-  gtk_widget_set_valign (self->face_image, GTK_ALIGN_END);
+-
+-  markup = g_strdup_printf ("%s", _("_Password:"));
+-  self->prompt_label = gtk_label_new (NULL);
+-  gtk_label_set_markup_with_mnemonic (GTK_LABEL (self->prompt_label), markup);
+-  gtk_label_set_xalign (GTK_LABEL (self->prompt_label), 0.0);
+-  gtk_label_set_yalign (GTK_LABEL (self->prompt_label), 0.0);
+-  gtk_grid_attach (GTK_GRID (grid), self->prompt_label, 1, 0, 1, 1);
+-  gtk_widget_set_valign (self->prompt_label, GTK_ALIGN_END);
+-  gtk_widget_set_vexpand (self->prompt_label, TRUE);
+-  gtk_widget_show (self->prompt_label);
+-  g_free (markup);
+-
+-  self->prompt_entry = gtk_entry_new ();
+-  gtk_entry_set_visibility (GTK_ENTRY (self->prompt_entry), FALSE);
+-  gtk_entry_set_activates_default (GTK_ENTRY (self->prompt_entry), TRUE);
+-  gtk_grid_attach (GTK_GRID (grid), self->prompt_entry, 1, 1, 1, 1);
+-  gtk_widget_set_hexpand (self->prompt_entry, TRUE);
+-  gtk_widget_set_valign (self->prompt_entry, GTK_ALIGN_END);
+-  gtk_widget_show (self->prompt_entry);
+-
+-  self->indicator_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+-  gtk_grid_attach (GTK_GRID (grid), self->indicator_box, 2, 1, 1, 1);
+-  gtk_widget_set_valign (self->indicator_box, GTK_ALIGN_END);
+-
+-  self->capslock_label = gtk_label_new (NULL);
+-  gtk_grid_attach (GTK_GRID (grid), self->capslock_label, 1, 2, 1, 1);
+-  gtk_widget_show (self->capslock_label);
+-
+-  gtk_label_set_mnemonic_widget (GTK_LABEL (self->prompt_label),
+-                                 self->prompt_entry);
+-
+-  /* button press handler used to inhibit popup menu */
+-  g_signal_connect (self->prompt_entry, "button-press-event",
+-                    G_CALLBACK (prompt_entry_button_press_event_cb),
+-                    NULL);
+-
+-  return hbox;
+-}
+-
+-static void
+-update_user_switch_button (GfUnlockDialog *self)
++static gboolean
++prompt_entry_popup_event_cb (GtkWidget      *widget,
++                             GdkEventButton *event)
+ {
+-  gboolean enabled;
+-
+-  enabled = self->user_switch_enabled;
+-
+-  if (enabled && self->dm_seat != NULL)
+-    enabled = gf_dm_seat_gen_get_can_switch (self->dm_seat);
+-
+-  gtk_widget_set_visible (self->switch_button, enabled);
++  return GDK_EVENT_STOP;
+ }
+ 
+ static void
+@@ -438,21 +202,6 @@ dm_seat_ready_cb (GObject      *object,
+ 
+   self = GF_UNLOCK_DIALOG (user_data);
+   self->dm_seat = seat;
+-
+-  update_user_switch_button (self);
+-}
+-
+-static void
+-switch_button_clicked_cb (GtkButton      *button,
+-                          GfUnlockDialog *self)
+-{
+-  set_sensitive (self, FALSE);
+-  set_busy (self);
+-
+-  cancel_timeout_remove (self);
+-  emit_cancel_remove (self);
+-
+-  switch_user (self);
+ }
+ 
+ static void
+@@ -466,90 +215,79 @@ unlock_button_clicked_cb (GtkButton      *button,
+       set_sensitive (self, FALSE);
+       set_message (self, _("Checking…"));
+ 
+-      text = gtk_entry_get_text (GTK_ENTRY (self->prompt_entry));
++      text = gtk_entry_get_text (GTK_ENTRY (self->auth_prompt_entry));
+ 
+       gf_auth_set_response (self->auth, text);
+     }
+ 
+-  cancel_timeout_remove (self);
+-  emit_cancel_remove (self);
+-
+-  gtk_entry_set_text (GTK_ENTRY (self->prompt_entry), "");
++  gtk_entry_set_text (GTK_ENTRY (self->auth_prompt_entry), "");
+ 
+   disable_prompt (self);
+   set_busy (self);
+ }
+ 
+-static GtkWidget *
+-create_page_one_buttons (GfUnlockDialog *self)
+-{
+-  GtkWidget *hbox;
+-
+-  hbox = gtk_button_box_new (GTK_ORIENTATION_HORIZONTAL);
+-  gtk_button_box_set_layout (GTK_BUTTON_BOX (hbox), GTK_BUTTONBOX_END);
+-  gtk_box_set_spacing (GTK_BOX (hbox), 5);
+-
+-  self->switch_button = gtk_button_new_with_mnemonic (_("S_witch User…"));
+-  gtk_widget_set_focus_on_click (self->switch_button, FALSE);
+-  gtk_widget_set_can_default (self->switch_button, TRUE);
+-  gtk_box_pack_end (GTK_BOX (hbox), self->switch_button, FALSE, TRUE, 0);
+-  gtk_widget_show (self->switch_button);
+-
+-  g_signal_connect (self->switch_button, "clicked",
+-                    G_CALLBACK (switch_button_clicked_cb), self);
+-
+-  self->unlock_button = gtk_button_new_with_mnemonic (_("_Unlock"));
+-  gtk_widget_set_focus_on_click (self->unlock_button, FALSE);
+-  gtk_widget_set_can_default (self->unlock_button, TRUE);
+-  gtk_box_pack_end (GTK_BOX (hbox), self->unlock_button, FALSE, TRUE, 0);
+-  gtk_widget_show (self->unlock_button);
+-
+-  g_signal_connect (self->unlock_button, "clicked",
+-                    G_CALLBACK (unlock_button_clicked_cb), self);
+-
+-  gtk_button_box_set_child_secondary (GTK_BUTTON_BOX (hbox),
+-                                      self->switch_button,
+-                                      TRUE);
+-
+-  update_user_switch_button (self);
+-
+-  return hbox;
+-}
+-
+-static GtkWidget *
+-create_page_one (GfUnlockDialog *self)
+-{
+-  GtkWidget *vbox;
+-  GtkWidget *content;
+-
+-  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
+-
+-  content = create_page_one_content (self);
+-  gtk_box_pack_start (GTK_BOX (vbox), content, FALSE, FALSE, 0);
+-  gtk_widget_show (content);
+-
+-  self->message_label = gtk_label_new (NULL);
+-  gtk_box_pack_start (GTK_BOX (vbox), self->message_label, FALSE, FALSE, 0);
+-  gtk_widget_show (self->message_label);
+-
+-  self->buttons_box = create_page_one_buttons (self);
+-  gtk_box_pack_end (GTK_BOX (vbox), self->buttons_box, FALSE, FALSE, 0);
+-  gtk_widget_show (self->buttons_box);
+-
+-  return vbox;
++/* Adapted from GDM2 daemon/verify-pam.c on 2006-06-13 */
++static const char *
++maybe_translate_message (const char *msg)
++{
++  char              *s;
++  const char        *ret;
++  static GHashTable *hash = NULL;
++
++  if (hash == NULL) {
++    /* Here we come with some fairly standard messages so that
++       we have as much as possible translated.  Should really be
++       translated in pam I suppose.  This way we can "change"
++       some of these messages to be more sane. */
++    hash = g_hash_table_new (g_str_hash, g_str_equal);
++    /* login: is whacked always translate to Username: */
++    g_hash_table_insert (hash, g_strdup("login:"),g_strdup( _("Username:")));
++    g_hash_table_insert (hash, g_strdup("Username:"), g_strdup(_("Username:")));
++    g_hash_table_insert (hash, g_strdup("username:"), g_strdup(_("Username:")));
++    g_hash_table_insert (hash, g_strdup("Password:"), g_strdup(_("Password:")));
++    g_hash_table_insert (hash, g_strdup("password:"), g_strdup(_("Password:")));
++    g_hash_table_insert (hash, g_strdup("You are required to change your password immediately (password aged)"),g_strdup(_("You are required to change your password immediately (password aged)")));
++    g_hash_table_insert (hash, g_strdup("You are required to change your password immediately (root enforced)"),g_strdup(_("You are required to change your password immediately (root enforced)")));
++    g_hash_table_insert (hash, g_strdup("Your account has expired; please contact your system administrator"), g_strdup(_("Your account has expired; please contact your system administrator")));
++    g_hash_table_insert (hash, g_strdup("No password supplied"),g_strdup(_("No password supplied")));
++    g_hash_table_insert (hash, g_strdup("Password unchanged"), g_strdup(_("Password unchanged")));
++    g_hash_table_insert (hash, g_strdup("Can not get username"),g_strdup(_("Cannot get username")));
++    g_hash_table_insert (hash, g_strdup("Retype new UNIX password:"),g_strdup(_("Retype new Unix password:")));
++    g_hash_table_insert (hash, g_strdup("Enter new UNIX password:"),g_strdup(_("Enter new Unix password:")));
++    g_hash_table_insert (hash, g_strdup("(current) UNIX password:"),g_strdup(_("(current) Unix password:")));
++    g_hash_table_insert (hash, g_strdup("Error while changing NIS password."),g_strdup(_("Error while changing NIS password.")));
++    g_hash_table_insert (hash, g_strdup("You must choose a longer password"),g_strdup(_("You must choose a longer password")));
++    g_hash_table_insert (hash, g_strdup("Password has been already used. Choose another."),g_strdup(_("Password has been already used. Choose another.")));
++    g_hash_table_insert (hash, g_strdup("You must wait longer to change your password"),g_strdup(_("You must wait longer to change your password")));
++    g_hash_table_insert (hash, g_strdup("Sorry, passwords do not match"),g_strdup(_("Sorry, passwords do not match")));
++    /* FIXME: what about messages which have some variables in them, perhaps try to do those as well */
++  }
++
++  s = g_strstrip (g_strdup (msg));
++  ret = g_hash_table_lookup (hash, s);
++  g_free (s);
++
++  if (ret != NULL) {
++    return ret;
++  } else {
++    return msg;
++  }
+ }
+ 
+ static void
+ auth_message_cb (GfAuth            *auth,
+                  GfAuthMessageType  type,
+-                 const char        *message,
++                 const char        *msg,
+                  GfUnlockDialog    *self)
+ {
+-  g_debug ("Got message: type - %d, message - %s", type, message);
++  const char *message;
++  g_debug ("Got message: type - %d, message - %s", type, msg);
+ 
+   gtk_widget_show (GTK_WIDGET (self));
+   set_ready (self);
+ 
++  message = maybe_translate_message (msg);
++
+   switch (type)
+     {
+       case GF_AUTH_MESSAGE_PROMPT_ECHO_ON:
+@@ -697,39 +435,10 @@ auth_complete_cb (GfAuth         *auth,
+     }
+ }
+ 
+-static void
+-update_capslock_label (GfUnlockDialog *self)
+-{
+-  GdkDisplay *display;
+-  GdkKeymap *keymap;
+-
+-  display = gtk_widget_get_display (GTK_WIDGET (self));
+-  keymap = gdk_keymap_get_for_display (display);
+-
+-  if (gdk_keymap_get_caps_lock_state (keymap))
+-    {
+-      gtk_label_set_text (GTK_LABEL (self->capslock_label),
+-                          _("You have the Caps Lock key on."));
+-    }
+-  else
+-    {
+-      gtk_label_set_text (GTK_LABEL (self->capslock_label), "");
+-    }
+-}
+-
+-static void
+-keymap_state_changed_cb (GdkKeymap      *keymap,
+-                         GfUnlockDialog *self)
+-{
+-  update_capslock_label (self);
+-}
+-
+ static void
+ gf_unlock_dialog_constructed (GObject *object)
+ {
+   GfUnlockDialog *self;
+-  GdkDisplay *display;
+-  GdkKeymap *keymap;
+   const char *username;
+   const char *env_display;
+ 
+@@ -737,14 +446,6 @@ gf_unlock_dialog_constructed (GObject *object)
+ 
+   G_OBJECT_CLASS (gf_unlock_dialog_parent_class)->constructed (object);
+ 
+-  display = gtk_widget_get_display (GTK_WIDGET (self));
+-  keymap = gdk_keymap_get_for_display (display);
+-
+-  self->keymap_state_changed_id = g_signal_connect (keymap,
+-                                                    "state-changed",
+-                                                    G_CALLBACK (keymap_state_changed_cb),
+-                                                    self);
+-
+   username = g_get_user_name ();
+   env_display = g_getenv ("DISPLAY");
+ 
+@@ -796,21 +497,6 @@ gf_unlock_dialog_finalize (GObject *object)
+ 
+   self = GF_UNLOCK_DIALOG (object);
+ 
+-  if (self->keymap_state_changed_id != 0)
+-    {
+-      GdkDisplay *display;
+-      GdkKeymap *keymap;
+-
+-      display = gtk_widget_get_display (GTK_WIDGET (self));
+-      keymap = gdk_keymap_get_for_display (display);
+-
+-      g_signal_handler_disconnect (keymap, self->keymap_state_changed_id);
+-      self->keymap_state_changed_id = 0;
+-    }
+-
+-  cancel_timeout_remove (self);
+-  emit_cancel_remove (self);
+-
+   if (self->shake_timeout_id != 0)
+     {
+       g_source_remove (self->shake_timeout_id);
+@@ -837,11 +523,8 @@ gf_unlock_dialog_show (GtkWidget *widget)
+ 
+   GTK_WIDGET_CLASS (gf_unlock_dialog_parent_class)->show (widget);
+ 
+-  update_capslock_label (self);
+-
+-  gtk_widget_grab_default (self->unlock_button);
+-  gtk_widget_grab_focus (self->prompt_entry);
+-  cancel_timeout_add (self);
++  gtk_widget_grab_default (self->auth_unlock_button);
++  gtk_widget_grab_focus (self->auth_prompt_entry);
+ }
+ 
+ static void
+@@ -880,19 +563,38 @@ gf_unlock_dialog_class_init (GfUnlockDialogClass *self_class)
+ 
+   gtk_widget_class_set_css_name (widget_class, "gf-unlock-dialog");
+ 
++  gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (self_class),
++                                               "/org/gnome/gnome-flashback/ui/gf-unlock-dialog.ui");
++
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_message_label);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_prompt_entry);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_unlock_button);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_unlock_image);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_title_image);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_title_label);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (self_class), GfUnlockDialog, auth_user_label);
++
+   binding_set = gtk_binding_set_by_class (widget_class);
+   gtk_binding_entry_add_signal (binding_set, GDK_KEY_Escape, 0, "close", 0);
+ }
+ 
++static gint
++key_press_event_cb (GtkWidget   *widget,
++                    GdkEventKey *event,
++                    gpointer    *data)
++{
++
++  if ((event->keyval == GDK_KEY_Up || event->keyval == GDK_KEY_Down))
++    return TRUE;
++
++  return FALSE;
++}
++
+ static void
+ gf_unlock_dialog_init (GfUnlockDialog *self)
+ {
++  GdkPixbuf *pixbuf = NULL;
+   const gchar *xdg_seat_path;
+-  GtkStyleContext *style;
+-  GtkWidget *frame;
+-  GtkWidget *vbox;
+-  GtkWidget *notebook;
+-  GtkWidget *page;
+ 
+   self->cancellable = g_cancellable_new ();
+ 
+@@ -908,30 +610,39 @@ gf_unlock_dialog_init (GfUnlockDialog *self)
+                                         self);
+     }
+ 
+-  gtk_widget_set_size_request (GTK_WIDGET (self), 450, -1);
++  gtk_widget_init_template (GTK_WIDGET (self));
+ 
+-  style = gtk_widget_get_style_context (GTK_WIDGET (self));
+-  gtk_style_context_add_class (style, GTK_STYLE_CLASS_BACKGROUND);
++  pixbuf = gdk_pixbuf_new_from_resource ("/org/gnome/gnome-flashback/screensaver/logo.svg", NULL);
++  if (pixbuf)
++    {
++      gtk_image_set_from_pixbuf (GTK_IMAGE (self->auth_title_image), pixbuf);
++      g_object_unref (pixbuf);
++    }
++  gtk_widget_show (self->auth_title_image);
+ 
+-  frame = gtk_frame_new (NULL);
+-  gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_OUT);
+-  gtk_container_add (GTK_CONTAINER (self), frame);
+-  gtk_widget_show (frame);
++  pixbuf = gdk_pixbuf_new_from_resource ("/org/gnome/gnome-flashback/screensaver/arrow.svg", NULL);
++  if (pixbuf)
++    {
++      gtk_image_set_from_pixbuf (GTK_IMAGE (self->auth_unlock_image), pixbuf);
++      g_object_unref (pixbuf);
++    }
++
++    gtk_widget_show (self->auth_unlock_image);
+ 
+-  vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
+-  gtk_container_set_border_width (GTK_CONTAINER (vbox), 24);
+-  gtk_container_add (GTK_CONTAINER (frame), vbox);
+-  gtk_widget_show (vbox);
++  /* button press handler used to inhibit popup menu */
++  g_signal_connect (self->auth_prompt_entry, "button_press_event",
++                      G_CALLBACK (prompt_entry_button_press_event_cb),NULL);
++  g_signal_connect (self->auth_prompt_entry, "popup-menu",
++                      G_CALLBACK (prompt_entry_popup_event_cb),NULL);
++  g_signal_connect (self->auth_unlock_button, "clicked",
++                      G_CALLBACK (unlock_button_clicked_cb), self);
++  g_signal_connect (self, "key_press_event", G_CALLBACK (key_press_event_cb), self);
+ 
+-  notebook = gtk_notebook_new ();
+-  gtk_notebook_set_show_border (GTK_NOTEBOOK (notebook), FALSE);
+-  gtk_notebook_set_show_tabs (GTK_NOTEBOOK (notebook), FALSE);
+-  gtk_box_pack_start (GTK_BOX (vbox), notebook, TRUE, TRUE, 0);
+-  gtk_widget_show (notebook);
++  gtk_label_set_label (GTK_LABEL (self->auth_user_label), g_get_user_name ());
+ 
+-  page = create_page_one (self);
+-  gtk_notebook_append_page (GTK_NOTEBOOK (notebook), page, NULL);
+-  gtk_widget_show (page);
++  gtk_widget_show (self->auth_user_label);
++  gtk_widget_show (self->auth_title_label);
++  gtk_widget_show (self->auth_message_label);
+ }
+ 
+ GtkWidget *
+@@ -948,43 +659,43 @@ void
+ gf_unlock_dialog_set_input_sources (GfUnlockDialog *self,
+                                     GfInputSources *input_sources)
+ {
+-  if (self->input_source_button != NULL)
+-    {
+-      gtk_widget_hide (self->indicator_box);
+-      gtk_widget_destroy (self->input_source_button);
+-      self->input_source_button = NULL;
+-      return;
+-    }
+-
+-  if (input_sources == NULL)
+-    return;
+-
+-  self->input_source_button = gf_input_sources_create_button (input_sources);
+-  gtk_container_add (GTK_CONTAINER (self->indicator_box),
+-                     self->input_source_button);
+-
+-  g_object_bind_property (self->input_source_button,
+-                          "visible",
+-                          self->indicator_box,
+-                          "visible",
+-                          G_BINDING_DEFAULT | G_BINDING_SYNC_CREATE);
++//  if (self->input_source_button != NULL)
++//    {
++//      gtk_widget_hide (self->indicator_box);
++//      gtk_widget_destroy (self->input_source_button);
++//      self->input_source_button = NULL;
++//      return;
++//    }
++//
++//  if (input_sources == NULL)
++//    return;
++//
++//  self->input_source_button = gf_input_sources_create_button (input_sources);
++//  gtk_container_add (GTK_CONTAINER (self->indicator_box),
++//                     self->input_source_button);
++//
++//  g_object_bind_property (self->input_source_button,
++//                          "visible",
++//                          self->indicator_box,
++//                          "visible",
++//                          G_BINDING_DEFAULT | G_BINDING_SYNC_CREATE);
+ }
+ 
+ void
+ gf_unlock_dialog_set_user_switch_enabled (GfUnlockDialog *self,
+                                           gboolean        user_switch_enabled)
+ {
+-  if (self->user_switch_enabled == user_switch_enabled)
+-    return;
+-
+-  self->user_switch_enabled = user_switch_enabled;
+-
+-  update_user_switch_button (self);
++//  if (self->user_switch_enabled == user_switch_enabled)
++//    return;
++//
++//  self->user_switch_enabled = user_switch_enabled;
++//
++//  update_user_switch_button (self);
+ }
+ 
+ void
+ gf_unlock_dialog_forward_key_event (GfUnlockDialog *self,
+                                     GdkEvent       *event)
+ {
+-  gtk_widget_event (self->prompt_entry, event);
++  gtk_widget_event (self->auth_prompt_entry, event);
+ }
+diff --git a/gnome-flashback/libscreensaver/gf-unlock-dialog.ui b/gnome-flashback/libscreensaver/gf-unlock-dialog.ui
+new file mode 100644
+index 0000000..2179d93
+--- /dev/null
++++ b/gnome-flashback/libscreensaver/gf-unlock-dialog.ui
+@@ -0,0 +1,157 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- Generated with glade 3.38.2 -->
++<interface>
++  <requires lib="gtk+" version="3.24"/>
++  <template class="GfUnlockDialog" parent="GtkBox">
++    <property name="name">login_window</property>
++    <property name="can-focus">False</property>
++    <property name="orientation">vertical</property>
++    <child>
++      <object class="GtkBox">
++        <property name="visible">True</property>
++        <property name="can-focus">False</property>
++        <property name="valign">start</property>
++        <property name="orientation">vertical</property>
++        <property name="spacing">40</property>
++        <child>
++          <object class="GtkImage" id="auth_title_image">
++            <property name="visible">True</property>
++            <property name="can-focus">False</property>
++            <property name="hexpand">True</property>
++            <property name="vexpand">True</property>
++          </object>
++          <packing>
++            <property name="expand">False</property>
++            <property name="fill">True</property>
++            <property name="position">0</property>
++          </packing>
++        </child>
++        <child>
++          <object class="GtkLabel" id="auth_title_label">
++            <property name="name">auth_title_label</property>
++            <property name="visible">True</property>
++            <property name="can-focus">False</property>
++            <property name="label" translatable="yes">Screen Locked</property>
++            <property name="use-markup">True</property>
++          </object>
++          <packing>
++            <property name="expand">False</property>
++            <property name="fill">True</property>
++            <property name="position">1</property>
++          </packing>
++        </child>
++      </object>
++      <packing>
++        <property name="expand">False</property>
++        <property name="fill">True</property>
++        <property name="position">0</property>
++      </packing>
++    </child>
++    <child>
++      <object class="GtkBox" id="auth_entry_box">
++        <property name="name">auth_entry_box</property>
++        <property name="width-request">320</property>
++        <property name="visible">True</property>
++        <property name="can-focus">False</property>
++        <property name="orientation">vertical</property>
++        <property name="spacing">10</property>
++        <child>
++          <object class="GtkLabel" id="auth_user_label">
++            <property name="name">auth_user_label</property>
++            <property name="height-request">38</property>
++            <property name="visible">True</property>
++            <property name="can-focus">True</property>
++          </object>
++          <packing>
++            <property name="expand">False</property>
++            <property name="fill">True</property>
++            <property name="position">0</property>
++          </packing>
++        </child>
++        <child>
++          <object class="GtkOverlay">
++            <property name="visible">True</property>
++            <property name="can-focus">False</property>
++            <child>
++              <object class="GtkEntry" id="auth_prompt_entry">
++                <property name="name">auth_prompt_entry</property>
++                <property name="height-request">38</property>
++                <property name="visible">True</property>
++                <property name="can-focus">True</property>
++                <property name="max-length">256</property>
++                <property name="visibility">False</property>
++                <property name="invisible-char">●</property>
++                <property name="activates-default">True</property>
++                <property name="width-chars">32</property>
++                <property name="primary-icon-activatable">False</property>
++                <property name="placeholder-text" translatable="yes">Enter your password</property>
++              </object>
++              <packing>
++                <property name="index">-1</property>
++              </packing>
++            </child>
++            <child type="overlay">
++              <object class="GtkAlignment">
++                <property name="visible">True</property>
++                <property name="can-focus">False</property>
++                <property name="top_padding">2</property>
++                <property name="bottom_padding">2</property>
++                <property name="left_padding">2</property>
++                <property name="right_padding">2</property>
++                <child>
++                  <object class="GtkButton" id="auth_unlock_button">
++                    <property name="name">auth_unlock_button</property>
++                    <property name="visible">True</property>
++                    <property name="can-focus">True</property>
++                    <property name="can-default">True</property>
++                    <property name="receives-default">True</property>
++                    <property name="halign">end</property>
++                    <child>
++                      <object class="GtkImage" id="auth_unlock_image">
++                        <property name="visible">True</property>
++                        <property name="can-focus">False</property>
++                      </object>
++                    </child>
++                  </object>
++                </child>
++              </object>
++              <packing>
++                <property name="pass-through">True</property>
++              </packing>
++            </child>
++          </object>
++          <packing>
++            <property name="expand">False</property>
++            <property name="fill">True</property>
++            <property name="position">1</property>
++          </packing>
++        </child>
++      </object>
++      <packing>
++        <property name="expand">True</property>
++        <property name="fill">True</property>
++        <property name="position">1</property>
++      </packing>
++    </child>
++    <child>
++      <object class="GtkLabel" id="auth_message_label">
++        <property name="name">auth_message_label</property>
++        <property name="visible">True</property>
++        <property name="can-focus">False</property>
++        <property name="margin-top">11</property>
++      </object>
++      <packing>
++        <property name="expand">False</property>
++        <property name="fill">True</property>
++        <property name="position">2</property>
++      </packing>
++    </child>
++  </template>
++  <object class="GtkSizeGroup">
++    <property name="mode">vertical</property>
++    <widgets>
++      <widget name="auth_title_image"/>
++      <widget name="auth_title_label"/>
++    </widgets>
++  </object>
++</interface>
+diff --git a/gnome-flashback/libscreensaver/gf-window.c b/gnome-flashback/libscreensaver/gf-window.c
+index 3724fcd..74be4a3 100644
+--- a/gnome-flashback/libscreensaver/gf-window.c
++++ b/gnome-flashback/libscreensaver/gf-window.c
+@@ -24,6 +24,7 @@
+ 
+ #include "gf-info-bar.h"
+ #include "gf-panel.h"
++#include "gf-panel-bottom.h"
+ #include "gf-unlock-dialog.h"
+ 
+ #define MAX_QUEUED_EVENTS 16
+@@ -36,6 +37,7 @@ struct _GfWindow
+   GtkWidget       *panel;
+   GtkWidget       *info_bar;
+   GtkWidget       *unlock_dialog;
++  GtkWidget       *panel_bottom;
+ 
+   GdkMonitor      *monitor;
+ 
+@@ -276,7 +278,7 @@ invalidate_cb (GdkMonitor *monitor,
+   display = gdk_monitor_get_display (monitor);
+   primary_monitor = gdk_display_get_primary_monitor (display);
+ 
+-  gtk_widget_set_visible (self->panel, primary_monitor == monitor);
++  gtk_widget_set_visible (self->panel_bottom, primary_monitor == monitor);
+ }
+ 
+ static void
+@@ -608,9 +610,9 @@ gf_window_init (GfWindow *self)
+   gtk_container_add (GTK_CONTAINER (self), self->vbox);
+   gtk_widget_show (self->vbox);
+ 
+-  self->panel = gf_panel_new ();
+-  gtk_box_pack_start (GTK_BOX (self->vbox), self->panel, FALSE, FALSE, 0);
+-  gtk_widget_show (self->panel);
++  self->panel_bottom = gf_panel_bottom_new ();
++  gtk_box_pack_end (GTK_BOX (self->vbox), self->panel_bottom, FALSE, FALSE, 0);
++  gtk_widget_show (self->panel_bottom);
+ 
+   self->info_bar = gf_info_bar_new ();
+   gtk_box_pack_start (GTK_BOX (self->vbox), self->info_bar, FALSE, FALSE, 0);
+diff --git a/gnome-flashback/libscreensaver/gresource.xml b/gnome-flashback/libscreensaver/gresource.xml
+new file mode 100644
+index 0000000..b071314
+--- /dev/null
++++ b/gnome-flashback/libscreensaver/gresource.xml
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<gresources>
++	<gresource prefix="/org/gnome/screensaver">
++		<file preprocess="xml-stripblanks">gf-unlock-dialog.ui</file>
++	</gresource>
++</gresources>
+diff --git a/po/POTFILES.in b/po/POTFILES.in
+index 4ef9ccf..cce55c7 100644
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -45,6 +45,8 @@ gnome-flashback/libpolkit/flashback-polkit-dialog.c
+ gnome-flashback/libpolkit/flashback-polkit-dialog.ui
+ gnome-flashback/libscreensaver/gf-auth.c
+ gnome-flashback/libscreensaver/gf-unlock-dialog.c
++gnome-flashback/libscreensaver/gf-unlock-dialog.ui
++gnome-flashback/libscreensaver/gf-panel-bottom.c
+ gnome-flashback/libscreenshot/gf-screenshot.c
+ gvc/gvc/gvc-mixer-control.c
+ system-indicators/si-bluetooth.c

@@ -1,0 +1,42 @@
+diff --git a/gnome-flashback/libshell/flashback-monitor-labeler.c b/gnome-flashback/libshell/flashback-monitor-labeler.c
+index 8300c41..97160fb 100644
+--- a/gnome-flashback/libshell/flashback-monitor-labeler.c
++++ b/gnome-flashback/libshell/flashback-monitor-labeler.c
+@@ -191,6 +191,8 @@ flashback_monitor_labeler_show (FlashbackMonitorLabeler *labeler,
+   GList *keys;
+   GList *key;
+   gint i;
++  GdkDisplay *display;
++  gint num_monitors;
+ 
+   if (labeler->hide_id > 0)
+     {
+@@ -216,13 +218,26 @@ flashback_monitor_labeler_show (FlashbackMonitorLabeler *labeler,
+ 
+   monitors = g_hash_table_new (g_direct_hash, g_direct_equal);
+ 
++  display = gdk_display_get_default ();
++  num_monitors = gdk_display_get_n_monitors (display);
++
+   while (g_variant_iter_next (&iter, "{&sv}", &connector, &v))
+     {
+-      gint monitor;
++      gint monitor = -1;
+ 
+       g_variant_get (v, "i", &number);
+ 
+-      monitor = gf_monitor_manager_get_monitor_for_connector (monitor_manager, connector);
++      for (i = 0; i < num_monitors; i++)
++        {
++          GdkMonitor *m;
++
++          m = gdk_display_get_monitor (display, i);
++          if (g_str_equal (connector, gdk_monitor_get_model (m)))
++            {
++              monitor = i;
++              break;
++            }
++        }
+ 
+       if (monitor != -1)
+         {

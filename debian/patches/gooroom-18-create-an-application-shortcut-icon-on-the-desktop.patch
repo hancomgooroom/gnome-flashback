@@ -1,0 +1,39 @@
+diff --git a/gnome-flashback/libdesktop/Makefile.am b/gnome-flashback/libdesktop/Makefile.am
+index a8fc5f7..78927ab 100644
+--- a/gnome-flashback/libdesktop/Makefile.am
++++ b/gnome-flashback/libdesktop/Makefile.am
+@@ -8,6 +8,7 @@ libdesktop_la_CPPFLAGS = \
+ 	-DG_LOG_DOMAIN=\"desktop\" \
+ 	-DG_LOG_USE_STRUCTURED=1 \
+ 	-DGNOME_DESKTOP_USE_UNSTABLE_API \
++	-DAPP_LAUNCHER_FILE=\"/usr/share/applications/\" \
+ 	-I$(top_builddir)/backends \
+ 	-I$(top_builddir)/gnome-flashback/libcommon \
+ 	-I$(top_builddir)/gnome-flashback/libdesktop \
+diff --git a/gnome-flashback/libdesktop/gf-monitor-view.c b/gnome-flashback/libdesktop/gf-monitor-view.c
+index bdf76a1..94adfef 100644
+--- a/gnome-flashback/libdesktop/gf-monitor-view.c
++++ b/gnome-flashback/libdesktop/gf-monitor-view.c
+@@ -607,11 +607,19 @@ drag_data_received_cb (GtkWidget        *widget,
+ 
+                   uris = get_uris_from_gnome_icon_list (self, selection_data);
+ 
+-                  move_to_desktop (self, uris, time);
++                  if (g_strrstr (uris[0], APP_LAUNCHER_FILE) != 0)
++                    {
++                        copy_to_desktop (self, uris, time);
++                        success = TRUE;
++                    }
++                  else
++                    {
++                        move_to_desktop (self, uris, time);
++                        success = TRUE;
++                        delete = TRUE;
++                    }
+                   g_strfreev (uris);
+ 
+-                  success = TRUE;
+-                  delete = TRUE;
+                 }
+             }
+           else if (action == GDK_ACTION_COPY)

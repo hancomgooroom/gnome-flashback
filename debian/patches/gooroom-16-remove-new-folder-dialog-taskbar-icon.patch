@@ -1,0 +1,12 @@
+diff --git a/gnome-flashback/libdesktop/gf-create-folder-dialog.c b/gnome-flashback/libdesktop/gf-create-folder-dialog.c
+index 6584ec2..be97d22 100644
+--- a/gnome-flashback/libdesktop/gf-create-folder-dialog.c
++++ b/gnome-flashback/libdesktop/gf-create-folder-dialog.c
+@@ -183,6 +183,7 @@ gf_create_folder_dialog_class_init (GfCreateFolderDialogClass *self_class)
+ static void
+ gf_create_folder_dialog_init (GfCreateFolderDialog *self)
+ {
++  gtk_window_set_skip_taskbar_hint (GTK_WINDOW (self), TRUE);
+   setup_header_bar (self);
+   setup_content_area (self);
+ }

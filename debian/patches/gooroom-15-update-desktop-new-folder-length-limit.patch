@@ -1,0 +1,30 @@
+diff --git a/gnome-flashback/libdesktop/gf-icon-view.c b/gnome-flashback/libdesktop/gf-icon-view.c
+index 0ebcc7a..b22602c 100644
+--- a/gnome-flashback/libdesktop/gf-icon-view.c
++++ b/gnome-flashback/libdesktop/gf-icon-view.c
+@@ -34,6 +34,8 @@
+ #include "gf-utils.h"
+ #include "gf-workarea-watcher.h"
+ 
++#define MAX_NAME_LENGTH 144
++
+ typedef struct
+ {
+   GtkWidget *icon;
+@@ -3237,6 +3239,16 @@ gf_icon_view_validate_new_name (GfIconView  *self,
+       valid = FALSE;
+     }
+ 
++  else if (strlen(text) > MAX_NAME_LENGTH - 1)
++    {
++      if (is_dir)
++        *message = g_strdup (_("A folder name is too long."));
++      else
++        *message = g_strdup (_("A file name is too long."));
++
++      valid = FALSE;
++    }
++
+   for (l = self->icons; l != NULL; l = l->next)
+     {
+       GfIconInfo *info;

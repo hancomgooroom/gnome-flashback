@@ -1,0 +1,1362 @@
+diff --git a/gnome-flashback/flashback.gresource.xml b/gnome-flashback/flashback.gresource.xml
+index e91fa9b..010e64c 100644
+--- a/gnome-flashback/flashback.gresource.xml
++++ b/gnome-flashback/flashback.gresource.xml
+@@ -17,6 +17,7 @@
+   <gresource prefix="/org/gnome/gnome-flashback">
+     <file alias="gf-inhibit-dialog.ui" compressed="true">libend-session-dialog/gf-inhibit-dialog.ui</file>
+     <file alias="flashback-polkit-dialog.ui" compressed="true">libpolkit/flashback-polkit-dialog.ui</file>
++    <file alias="polkit-agent-self-auth-dialog.ui" compressed="true">libpolkit/polkit-agent-self-auth-dialog.ui</file>
+   </gresource>
+   <gresource prefix="/org/gnome/gnome-flashback/screensaver">
+     <file alias="logo.svg">../data/screensaver/images/gooroom-screensaver-logo.svg</file>
+diff --git a/gnome-flashback/libpolkit/Makefile.am b/gnome-flashback/libpolkit/Makefile.am
+index b32fa0a..1e40dce 100644
+--- a/gnome-flashback/libpolkit/Makefile.am
++++ b/gnome-flashback/libpolkit/Makefile.am
+@@ -15,10 +15,11 @@ libpolkit_la_CFLAGS = \
+ 	$(AM_CFLAGS) \
+ 	-I$(top_builddir)/gnome-flashback/libpolkit \
+ 	-DPOLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE \
++	-DPOLKIT_AGENT_SELF_AUTH_HELPER=\"$(libexecdir)/polkit-agent-self-auth-helper\" \
+ 	$(NULL)
+ 
+ libpolkit_la_SOURCES = \
+-  flashback-authenticator.c \
++	flashback-authenticator.c \
+ 	flashback-authenticator.h \
+ 	flashback-listener.c \
+ 	flashback-listener.h \
+@@ -26,6 +27,10 @@ libpolkit_la_SOURCES = \
+ 	flashback-polkit.h \
+ 	flashback-polkit-dialog.c \
+ 	flashback-polkit-dialog.h \
++	polkit-agent-self-auth-session.c \
++	polkit-agent-self-auth-session.h \
++	polkit-agent-self-auth-dialog.c \
++	polkit-agent-self-auth-dialog.h \
+ 	$(NULL)
+ 
+ libpolkit_la_LDFLAGS = \
+@@ -37,8 +42,30 @@ libpolkit_la_LIBADD = \
+ 	$(POLKIT_LIBS) \
+ 	$(NULL)
+ 
++libexec_PROGRAMS = polkit-agent-self-auth-helper
++
++polkit_agent_self_auth_helper_SOURCES = \
++	polkit-agent-self-auth-helper.c
++
++polkit_agent_self_auth_helper_CFLAGS = \
++	$(POLKIT_CFLAGS) \
++	$(GLIB_CFLAGS)
++
++polkit_agent_self_auth_helper_LDADD = \
++	$(POLKIT_LIBS) \
++	$(GLIB_LIBS)
++
++# polkit-agent-self-auth-helper need to be setuid root because it's used to
++# authenticate not only the invoking user, but possibly also root
++# and/or other users.
++#
++install-exec-hook:
++	-chown root $(DESTDIR)$(libexecdir)/polkit-agent-self-auth-helper
++	-chmod 4755 $(DESTDIR)$(libexecdir)/polkit-agent-self-auth-helper
++
+ EXTRA_DIST = \
+ 	flashback-polkit-dialog.ui \
++	polkit-agent-self-auth-dialog.ui \
+ 	$(NULL)
+ 
+ -include $(top_srcdir)/git.mk
+diff --git a/gnome-flashback/libpolkit/flashback-authenticator.c b/gnome-flashback/libpolkit/flashback-authenticator.c
+index f384119..acde304 100644
+--- a/gnome-flashback/libpolkit/flashback-authenticator.c
++++ b/gnome-flashback/libpolkit/flashback-authenticator.c
+@@ -24,9 +24,12 @@
+ 
+ #include <glib/gi18n.h>
+ #include <pwd.h>
++#include <stdio.h>
+ 
+ #include "flashback-authenticator.h"
+ #include "flashback-polkit-dialog.h"
++#include "polkit-agent-self-auth-dialog.h"
++#include "polkit-agent-self-auth-session.h"
+ 
+ struct _FlashbackAuthenticator
+ {
+@@ -45,6 +48,7 @@ struct _FlashbackAuthenticator
+   gchar                   **users;
+ 
+   GtkWidget                *dialog;
++  PolkitAgentSelfAuthDialog *self_auth_dialog;
+ 
+   gboolean                  gained_authorization;
+   gboolean                  was_cancelled;
+@@ -53,6 +57,8 @@ struct _FlashbackAuthenticator
+ 
+   PolkitAgentSession       *session;
+ 
++  PolkitAgentSelfAuthSession *self_auth_session;
++
+   GMainLoop                *loop;
+ 
+   gulong                    idle_id;
+@@ -182,6 +188,58 @@ session_completed (PolkitAgentSession *session,
+   g_main_loop_quit (authenticator->loop);
+ }
+ 
++static void
++self_auth_session_completed (PolkitAgentSelfAuthSession *session,
++                             gboolean                    gained_authorization,
++                             gpointer                    user_data)
++{
++  FlashbackAuthenticator *authenticator;
++
++  authenticator = FLASHBACK_AUTHENTICATOR (user_data);
++
++  authenticator->gained_authorization = gained_authorization;
++
++  g_main_loop_quit (authenticator->loop);
++}
++
++static gboolean
++polkit_agent_self_auth_dialog_run_idle (gpointer user_data)
++{
++  gint res;
++  FlashbackAuthenticator *authenticator;
++
++  authenticator = FLASHBACK_AUTHENTICATOR (user_data);
++
++  authenticator->gained_authorization = FALSE;
++
++  res = polkit_agent_self_auth_dialog_run (authenticator->self_auth_dialog);
++
++  if (res == GTK_RESPONSE_OK)
++    {
++      PolkitIdentity *identity;
++
++      authenticator->was_cancelled = FALSE;
++
++      identity = polkit_unix_user_new_for_name (authenticator->users[0], NULL);
++
++      authenticator->self_auth_session = polkit_agent_self_auth_session_new (identity, authenticator->cookie);
++      g_object_unref (identity);
++
++      g_signal_connect (authenticator->self_auth_session, "completed",
++                        G_CALLBACK (self_auth_session_completed), authenticator);
++
++      polkit_agent_self_auth_session_initiate (authenticator->self_auth_session);
++    }
++  else
++    {
++      authenticator->was_cancelled = TRUE;
++
++      g_main_loop_quit (authenticator->loop);
++    }
++
++  return FALSE;
++}
++
+ static gboolean
+ do_initiate (gpointer user_data)
+ {
+@@ -190,6 +248,26 @@ do_initiate (gpointer user_data)
+   gint num_tries;
+ 
+   authenticator = FLASHBACK_AUTHENTICATOR (user_data);
++
++  if (!authenticator->dialog && authenticator->self_auth_dialog)
++    {
++      polkit_agent_self_auth_dialog_present (authenticator->self_auth_dialog);
++
++      authenticator->loop = g_main_loop_new (NULL, TRUE);
++
++      g_idle_add (polkit_agent_self_auth_dialog_run_idle, authenticator);
++
++      g_main_loop_run (authenticator->loop);
++
++      g_signal_emit_by_name (authenticator, "completed",
++                             authenticator->gained_authorization,
++                             authenticator->was_cancelled);
++
++      authenticator->idle_id = 0;
++
++      return G_SOURCE_REMOVE;
++    }
++
+   dialog = FLASHBACK_POLKIT_DIALOG (authenticator->dialog);
+ 
+   flashback_polkit_dialog_present (dialog);
+@@ -366,7 +444,14 @@ flashback_authenticator_dispose (GObject *object)
+       authenticator->dialog = NULL;
+     }
+ 
++  if (authenticator->self_auth_dialog != NULL)
++    { 
++      gtk_widget_destroy (GTK_WIDGET (authenticator->self_auth_dialog));
++      authenticator->self_auth_dialog = NULL;
++    }
++
+   g_clear_object (&authenticator->session);
++  g_clear_object (&authenticator->self_auth_session);
+ 
+   if (authenticator->loop != NULL)
+     {
+@@ -444,6 +529,7 @@ flashback_authenticator_new (const gchar   *action_id,
+   gint users;
+   gint i;
+   GList *l;
++  gchar *implicit_auth;
+   const gchar *vendor;
+   const gchar *vendor_url;
+ 
+@@ -490,6 +576,37 @@ flashback_authenticator_new (const gchar   *action_id,
+       authenticator->users[i] = g_strdup (passwd->pw_name);
+     }
+ 
++  if (authenticator->details != NULL)
++    {
++      guint n;
++      gchar **keys;
++
++      keys = polkit_details_get_keys (authenticator->details);
++      for (n = 0; keys[n] != NULL; n++)
++        {
++          if (g_str_equal (keys[n], "polkit.implicit_authorization"))
++            {
++              implicit_auth = g_strdup (polkit_details_lookup (authenticator->details, keys[n]));
++              break;
++            }
++        }
++      g_strfreev (keys);
++    }
++
++  if (implicit_auth && (g_str_equal (implicit_auth, "auth_self") || g_str_equal (implicit_auth, "auth_self_keep")))
++    {
++      authenticator->dialog = NULL;
++      authenticator->self_auth_dialog = polkit_agent_self_auth_dialog_new ();
++
++      g_signal_connect (authenticator->self_auth_dialog, "delete-event",
++                        G_CALLBACK (delete_event_cb), authenticator);
++
++      g_free (implicit_auth);
++
++      return authenticator;
++    }
++
++  authenticator->self_auth_dialog = NULL;
+   vendor = polkit_action_description_get_vendor_name (authenticator->action_desc);
+   vendor_url = polkit_action_description_get_vendor_url (authenticator->action_desc);
+ 
+@@ -527,6 +644,9 @@ flashback_authenticator_cancel (FlashbackAuthenticator *authenticator)
+ 
+   if (authenticator->session != NULL)
+     polkit_agent_session_cancel (authenticator->session);
++
++  if (authenticator->self_auth_session != NULL)
++    polkit_agent_self_auth_session_cancel (authenticator->self_auth_session);
+ }
+ 
+ const gchar *
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.c b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.c
+new file mode 100644
+index 0000000..56c335c
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.c
+@@ -0,0 +1,196 @@
++/*
++ * Copyright (c) 2015 - 2017 gooroom <gooroom@gooroom.kr>
++ * Copyright (C) 2009 Red Hat, Inc.
++ * Copyright (C) 2015 Alberts Muktupāvels
++ *
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#include "config.h"
++
++#include <errno.h>
++#include <gdk/gdkx.h>
++#include <glib/gi18n-lib.h>
++
++#include "polkit-agent-self-auth-dialog.h"
++
++
++struct _PolkitAgentSelfAuthDialog {
++  GtkWindow parent;
++
++  GtkWidget *btn_cancel;
++  GtkWidget *btn_continue;
++
++  gint       response;
++
++  gboolean   is_running;
++};
++
++enum
++{
++  SIGNAL_CLOSE,
++
++  LAST_SIGNAL
++};
++
++static guint signals[LAST_SIGNAL] = { 0 };
++
++
++
++G_DEFINE_TYPE (PolkitAgentSelfAuthDialog, polkit_agent_self_auth_dialog, GTK_TYPE_WINDOW)
++
++
++
++static void
++continue_button_clicked_cb (GtkButton                 *button,
++                            PolkitAgentSelfAuthDialog *dialog)
++{
++  dialog->response = GTK_RESPONSE_OK;
++
++  if (dialog->is_running)
++    gtk_main_quit ();
++}
++
++static void
++cancel_button_clicked_cb (GtkButton                 *button,
++                          PolkitAgentSelfAuthDialog *dialog)
++{
++  dialog->response = GTK_RESPONSE_CANCEL;
++
++  if (dialog->is_running)
++    gtk_main_quit ();
++
++  gtk_window_close (GTK_WINDOW (dialog));
++}
++
++static void
++close_event_cb (PolkitAgentSelfAuthDialog *dialog,
++                gpointer                   user_data)
++{
++  dialog->response = GTK_RESPONSE_CANCEL;
++
++  if (dialog->is_running)
++    gtk_main_quit ();
++
++  gtk_window_close (GTK_WINDOW (dialog));
++}
++
++static gboolean
++delete_event_cb (PolkitAgentSelfAuthDialog *dialog,
++                 GdkEvent                  *event,
++                 gpointer                   user_data)
++{
++  if (!dialog->is_running)
++    return FALSE;
++
++  dialog->response = GTK_RESPONSE_DELETE_EVENT;
++  gtk_main_quit ();
++
++  return TRUE;
++}
++
++static void
++polkit_agent_self_auth_dialog_init (PolkitAgentSelfAuthDialog *dialog)
++{
++  gtk_widget_init_template (GTK_WIDGET (dialog));
++
++  dialog->response = GTK_RESPONSE_OK;
++  dialog->is_running = FALSE;
++
++  g_signal_connect (dialog, "close", G_CALLBACK (close_event_cb), NULL);
++  g_signal_connect (dialog, "delete-event", G_CALLBACK (delete_event_cb), NULL);
++
++  g_signal_connect (dialog->btn_continue, "clicked", G_CALLBACK (continue_button_clicked_cb), dialog);
++  g_signal_connect (dialog->btn_cancel, "clicked", G_CALLBACK (cancel_button_clicked_cb), dialog);
++
++  gtk_window_set_keep_above (GTK_WINDOW (dialog), TRUE);
++}
++
++static void
++polkit_agent_self_auth_dialog_class_init (PolkitAgentSelfAuthDialogClass *klass)
++{
++  GtkBindingSet *binding_set;
++
++  signals[SIGNAL_CLOSE] =
++    g_signal_new ("close",
++                  G_OBJECT_CLASS_TYPE (klass),
++                  G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
++                  0, NULL, NULL,
++                  g_cclosure_marshal_VOID__VOID,
++                  G_TYPE_NONE, 0);
++
++  binding_set = gtk_binding_set_by_class (klass);
++  gtk_binding_entry_add_signal (binding_set, GDK_KEY_Escape, 0, "close", 0);
++
++  gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (klass),
++                                               "/org/gnome/gnome-flashback/polkit-agent-self-auth-dialog.ui");
++
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (klass), PolkitAgentSelfAuthDialog, btn_continue);
++  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (klass), PolkitAgentSelfAuthDialog, btn_cancel);
++}
++
++PolkitAgentSelfAuthDialog*
++polkit_agent_self_auth_dialog_new (void)
++{
++  return g_object_new (POLKIT_AGENT_TYPE_SELF_AUTH_DIALOG, NULL);
++}
++
++int
++polkit_agent_self_auth_dialog_run (PolkitAgentSelfAuthDialog *dialog)
++{
++  dialog->is_running = TRUE;
++
++  gtk_widget_show_all (GTK_WIDGET (dialog));
++
++  gtk_main ();
++
++  gtk_widget_hide (GTK_WIDGET (dialog));
++
++  dialog->is_running = FALSE;
++
++  return dialog->response;
++}
++
++gboolean
++polkit_agent_self_auth_dialog_cancel (PolkitAgentSelfAuthDialog *dialog)
++{
++  if (!dialog->is_running)
++    return FALSE;
++
++  dialog->response = GTK_RESPONSE_CANCEL;
++  gtk_main_quit ();
++
++  return TRUE;
++}
++
++void
++polkit_agent_self_auth_dialog_present (PolkitAgentSelfAuthDialog *dialog)
++{
++  GtkWidget *widget;
++  GdkWindow *window;
++  guint32 server_time;
++
++  widget = GTK_WIDGET (dialog);
++
++  gtk_widget_show_all (widget);
++
++  window = gtk_widget_get_window (widget);
++
++  server_time = GDK_CURRENT_TIME;
++  if (window != NULL)
++    server_time = gdk_x11_get_server_time (window);
++
++  gtk_window_present_with_time (GTK_WINDOW (dialog), server_time);
++}
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.h b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.h
+new file mode 100644
+index 0000000..3e8116b
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (C) 2015-2017 Gooroom <gooroom@gooroom.kr>
++ * Copyright (C) 2009 Red Hat, Inc.
++ * Copyright (C) 2015 Alberts Muktupāvels
++ *
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ *
++ */
++
++#ifndef __POLKIT_AGENT_SELF_AUTH_DIALOG_H__
++#define __POLKIT_AGENT_SELF_AUTH_DIALOG_H__
++
++#include <gtk/gtk.h>
++
++G_BEGIN_DECLS
++
++#define POLKIT_AGENT_TYPE_SELF_AUTH_DIALOG polkit_agent_self_auth_dialog_get_type ()
++G_DECLARE_FINAL_TYPE (PolkitAgentSelfAuthDialog, polkit_agent_self_auth_dialog,
++                      POLKIT_AGENT, SELF_AUTH_DIALOG, GtkWindow)
++
++PolkitAgentSelfAuthDialog  *polkit_agent_self_auth_dialog_new       (void);
++
++int                         polkit_agent_self_auth_dialog_run       (PolkitAgentSelfAuthDialog  *dialog);
++gboolean                    polkit_agent_self_auth_dialog_cancel    (PolkitAgentSelfAuthDialog  *dialog);
++void                        polkit_agent_self_auth_dialog_present   (PolkitAgentSelfAuthDialog  *dialog);
++
++
++G_END_DECLS
++
++#endif
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.ui b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.ui
+new file mode 100644
+index 0000000..eb3fd66
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.ui
+@@ -0,0 +1,135 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- Generated with glade 3.40.0 -->
++<interface>
++  <requires lib="gtk+" version="3.24"/>
++  <template class="PolkitAgentSelfAuthDialog" parent="GtkWindow">
++    <property name="can-focus">False</property>
++    <property name="border-width">5</property>
++    <property name="title" translatable="yes">Authenticate</property>
++    <property name="resizable">False</property>
++    <property name="modal">True</property>
++    <property name="window-position">center</property>
++    <property name="icon-name">dialog-password</property>
++    <property name="type-hint">dialog</property>
++    <child>
++      <object class="GtkBox">
++        <property name="visible">True</property>
++        <property name="can-focus">False</property>
++        <property name="border-width">2</property>
++        <property name="orientation">vertical</property>
++        <property name="spacing">36</property>
++        <child>
++          <object class="GtkBox">
++            <property name="visible">True</property>
++            <property name="can-focus">False</property>
++            <property name="spacing">12</property>
++            <child>
++              <object class="GtkImage">
++                <property name="visible">True</property>
++                <property name="can-focus">False</property>
++                <property name="halign">center</property>
++                <property name="valign">start</property>
++                <property name="pixel-size">48</property>
++                <property name="icon-name">dialog-password</property>
++                <property name="icon_size">6</property>
++              </object>
++              <packing>
++                <property name="expand">False</property>
++                <property name="fill">True</property>
++                <property name="position">0</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkBox">
++                <property name="visible">True</property>
++                <property name="can-focus">False</property>
++                <property name="orientation">vertical</property>
++                <property name="spacing">15</property>
++                <child>
++                  <object class="GtkLabel">
++                    <property name="visible">True</property>
++                    <property name="can-focus">False</property>
++                    <property name="halign">start</property>
++                    <property name="label" translatable="yes">&lt;big&gt;&lt;b&gt;You need permission to perform this action.&lt;/b&gt;&lt;/big&gt;</property>
++                    <property name="use-markup">True</property>
++                    <property name="single-line-mode">True</property>
++                  </object>
++                  <packing>
++                    <property name="expand">False</property>
++                    <property name="fill">True</property>
++                    <property name="position">0</property>
++                  </packing>
++                </child>
++                <child>
++                  <object class="GtkLabel">
++                    <property name="visible">True</property>
++                    <property name="can-focus">False</property>
++                    <property name="halign">start</property>
++                    <property name="label" translatable="yes">Click Continue to get authorization to this action.</property>
++                    <property name="use-markup">True</property>
++                    <property name="single-line-mode">True</property>
++                  </object>
++                  <packing>
++                    <property name="expand">False</property>
++                    <property name="fill">True</property>
++                    <property name="position">1</property>
++                  </packing>
++                </child>
++              </object>
++              <packing>
++                <property name="expand">True</property>
++                <property name="fill">True</property>
++                <property name="position">1</property>
++              </packing>
++            </child>
++          </object>
++          <packing>
++            <property name="expand">True</property>
++            <property name="fill">True</property>
++            <property name="position">0</property>
++          </packing>
++        </child>
++        <child>
++          <object class="GtkButtonBox">
++            <property name="visible">True</property>
++            <property name="can-focus">False</property>
++            <property name="spacing">6</property>
++            <property name="layout-style">end</property>
++            <child>
++              <object class="GtkButton" id="btn_continue">
++                <property name="label" translatable="yes">Continue</property>
++                <property name="visible">True</property>
++                <property name="can-focus">True</property>
++                <property name="receives-default">False</property>
++              </object>
++              <packing>
++                <property name="expand">True</property>
++                <property name="fill">True</property>
++                <property name="position">0</property>
++              </packing>
++            </child>
++            <child>
++              <object class="GtkButton" id="btn_cancel">
++                <property name="label">gtk-cancel</property>
++                <property name="visible">True</property>
++                <property name="can-focus">True</property>
++                <property name="receives-default">False</property>
++                <property name="use-stock">True</property>
++              </object>
++              <packing>
++                <property name="expand">True</property>
++                <property name="fill">True</property>
++                <property name="position">1</property>
++              </packing>
++            </child>
++          </object>
++          <packing>
++            <property name="expand">False</property>
++            <property name="fill">True</property>
++            <property name="position">1</property>
++          </packing>
++        </child>
++      </object>
++    </child>
++  </template>
++</interface>
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-helper.c b/gnome-flashback/libpolkit/polkit-agent-self-auth-helper.c
+new file mode 100644
+index 0000000..21c4df1
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-helper.c
+@@ -0,0 +1,196 @@
++/*
++ * Copyright (c) 2015 - 2017 gooroom <gooroom@gooroom.kr>
++ * Copyright (C) 2008, 2010 Red Hat, Inc.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General
++ * Public License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
++ * Boston, MA 02111-1307, USA.
++ *
++ * Author: David Zeuthen <davidz@redhat.com>
++ */
++
++#include "config.h"
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <syslog.h>
++
++#include <polkit/polkit.h>
++
++static int
++polkit_clearenv (void)
++{
++  return clearenv ();
++}
++
++static void
++flush_and_wait ()
++{
++  fflush (stdout);
++  fflush (stderr);
++  fdatasync (fileno(stdout));
++  fdatasync (fileno(stderr));
++  usleep (100 * 1000);
++}
++
++
++static char *
++read_cookie (void)
++{
++  /* As part of CVE-2015-4625, we started passing the cookie
++   * on standard input, to ensure it's not visible to other
++   * processes.  However, to ensure that things continue
++   * to work if the setuid binary is upgraded while old
++   * agents are still running (this will be common with
++   * package managers), we support both modes.
++   */
++  char *ret = NULL;
++  size_t n = 0;
++  ssize_t r = getline (&ret, &n, stdin);
++  if (r == -1)
++    {
++      if (!feof (stdin))
++        perror ("getline");
++      free (ret);
++      return NULL;
++    }
++  else
++    {
++      g_strchomp (ret);
++      return ret;
++    }
++}
++
++static gboolean
++send_dbus_message (const char *cookie, const char *user)
++{
++  PolkitAuthority *authority = NULL;
++  PolkitIdentity *identity = NULL;
++  GError *error;
++  gboolean ret;
++
++  ret = FALSE;
++
++  error = NULL;
++  authority = polkit_authority_get_sync (NULL /* GCancellable* */, &error);
++  if (authority == NULL)
++    {
++      g_printerr ("Error getting authority: %s\n", error->message);
++      g_error_free (error);
++      goto out;
++    }
++
++  identity = polkit_unix_user_new_for_name (user, &error);
++  if (identity == NULL)
++    {
++      g_printerr ("Error constructing identity: %s\n", error->message);
++      g_error_free (error);
++      goto out;
++    }
++
++  if (!polkit_authority_authentication_agent_response_sync (authority,
++                                                            cookie,
++                                                            identity,
++                                                            NULL,
++                                                            &error))
++    {
++      g_printerr ("polkit-agent-self-auth-helper: error response to PolicyKit daemon: %s\n", error->message);
++      g_error_free (error);
++      goto out;
++    }
++
++  ret = TRUE;
++
++ out:
++
++  if (identity != NULL)
++    g_object_unref (identity);
++
++  if (authority != NULL)
++    g_object_unref (authority);
++
++  return ret;
++}
++
++int
++main (int argc, char *argv[])
++{
++  char *cookie = NULL;
++  const char *user_to_auth;
++
++  /* clear the entire environment to avoid attacks using with libraries honoring environment variables */
++  if (polkit_clearenv () != 0)
++    goto error;
++
++  /* set a minimal environment */
++  setenv ("PATH", "/usr/sbin:/usr/bin:/sbin:/bin", 1);
++
++  /* check that we are setuid root */
++  if (geteuid () != 0)
++    {
++      fprintf (stderr, "polkit-agent-self-auth-helper: needs to be setuid root\n");
++      goto error;
++    }
++
++  /* check for correct invocation */
++  if (argc != 2)
++    {
++      syslog (LOG_NOTICE, "inappropriate use of helper, wrong number of arguments [uid=%d]", getuid ());
++      fprintf (stderr, "polkit-agent-self-auth-helper: wrong number of arguments. This incident has been logged.\n");
++      goto error;
++    }
++
++  user_to_auth = argv[1];
++
++  cookie = read_cookie ();
++  if (!cookie)
++    goto error;
++
++  if (getuid () != 0)
++    {
++      /* check we're running with a non-tty stdin */
++      if (isatty (STDIN_FILENO) != 0)
++        {
++          syslog (LOG_NOTICE, "inappropriate use of helper, stdin is a tty [uid=%d]", getuid ());
++          fprintf (stderr, "polkit-agent-self-auth-helper: inappropriate use of helper, stdin is a tty. This incident has been logged.\n");
++          goto error;
++        }
++    }
++
++  /* now send a D-Bus message to the PolicyKit daemon that
++   * includes a) the cookie; and b) the user we authenticated
++   */
++  if (!send_dbus_message (cookie, user_to_auth))
++    {
++      fprintf (stderr, "polkit-agent-self-auth-helper: error sending D-Bus message to PolicyKit daemon\n");
++      goto error;
++    }
++
++  free (cookie);
++
++  fprintf (stdout, "SUCCESS\n");
++  flush_and_wait();
++  return 0;
++
++error:
++  free (cookie);
++
++  fprintf (stdout, "FAILURE\n");
++  flush_and_wait();
++  return 1;
++}
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-session.c b/gnome-flashback/libpolkit/polkit-agent-self-auth-session.c
+new file mode 100644
+index 0000000..f3a6d2b
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-session.c
+@@ -0,0 +1,425 @@
++/*
++ * Copyright (c) 2015 - 2017 gooroom <gooroom@gooroom.kr>
++ * Copyright (C) 2008 Red Hat, Inc.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General
++ * Public License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
++ * Boston, MA 02111-1307, USA.
++ *
++ * Author: David Zeuthen <davidz@redhat.com>
++ */
++
++#include "config.h"
++
++#include <string.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <gio/gunixoutputstream.h>
++#include <polkit/polkit.h>
++#include <pwd.h>
++
++#include "polkit-agent-self-auth-session.h"
++
++
++struct _PolkitAgentSelfAuthSession
++{
++  GObject parent_instance;
++
++  gchar *cookie;
++  PolkitIdentity *identity;
++
++  GOutputStream *child_stdin;
++  int child_stdout;
++  GPid child_pid;
++
++  GSource *child_stdout_watch_source;
++  GIOChannel *child_stdout_channel;
++
++  gboolean helper_is_running;
++  gboolean have_emitted_completed;
++};
++
++enum
++{
++  PROP_0,
++  PROP_IDENTITY,
++  PROP_COOKIE
++};
++
++enum
++{
++  COMPLETED_SIGNAL,
++  LAST_SIGNAL,
++};
++
++static guint signals[LAST_SIGNAL] = {0};
++
++G_DEFINE_TYPE (PolkitAgentSelfAuthSession, polkit_agent_self_auth_session, G_TYPE_OBJECT);
++
++static void kill_helper (PolkitAgentSelfAuthSession *session);
++
++static void
++polkit_agent_self_auth_session_init (PolkitAgentSelfAuthSession *session)
++{
++  session->child_stdout = -1;
++}
++
++static void
++polkit_agent_self_auth_session_finalize (GObject *object)
++{
++  PolkitAgentSelfAuthSession *session;
++
++  session = POLKIT_AGENT_SELF_AUTH_SESSION (object);
++
++  /* this releases resources related to the helper */
++  kill_helper (session);
++
++  g_free (session->cookie);
++  if (session->identity != NULL)
++    g_object_unref (session->identity);
++
++  if (G_OBJECT_CLASS (polkit_agent_self_auth_session_parent_class)->finalize != NULL)
++    G_OBJECT_CLASS (polkit_agent_self_auth_session_parent_class)->finalize (object);
++}
++
++static void
++polkit_agent_self_auth_session_get_property (GObject     *object,
++                                             guint        prop_id,
++                                             GValue      *value,
++                                             GParamSpec  *pspec)
++{
++  PolkitAgentSelfAuthSession *session = POLKIT_AGENT_SELF_AUTH_SESSION (object);
++
++  switch (prop_id)
++    {
++    case PROP_IDENTITY:
++      g_value_set_object (value, session->identity);
++      break;
++
++    case PROP_COOKIE:
++      g_value_set_string (value, session->cookie);
++      break;
++
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++    }
++}
++
++static void
++polkit_agent_self_auth_session_set_property (GObject      *object,
++                                             guint         prop_id,
++                                             const GValue *value,
++                                             GParamSpec   *pspec)
++{
++  PolkitAgentSelfAuthSession *session = POLKIT_AGENT_SELF_AUTH_SESSION (object);
++
++  switch (prop_id)
++    {
++    case PROP_IDENTITY:
++      session->identity = g_value_dup_object (value);
++      break;
++
++    case PROP_COOKIE:
++      session->cookie = g_value_dup_string (value);
++      break;
++
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++    }
++}
++
++static void
++polkit_agent_self_auth_session_class_init (PolkitAgentSelfAuthSessionClass *klass)
++{
++  GObjectClass *gobject_class;
++
++  gobject_class = G_OBJECT_CLASS (klass);
++
++  gobject_class->finalize = polkit_agent_self_auth_session_finalize;
++  gobject_class->get_property = polkit_agent_self_auth_session_get_property;
++  gobject_class->set_property = polkit_agent_self_auth_session_set_property;
++
++
++  /**
++   * PolkitAgentSelfAuthSession:identity:
++   *
++   * The identity to authenticate.
++   */
++  g_object_class_install_property (gobject_class,
++                                   PROP_IDENTITY,
++                                   g_param_spec_object ("identity",
++                                                        "Identity",
++                                                        "The identity to authenticate",
++                                                        POLKIT_TYPE_IDENTITY,
++                                                        G_PARAM_CONSTRUCT_ONLY |
++                                                        G_PARAM_READWRITE |
++                                                        G_PARAM_STATIC_NAME |
++                                                        G_PARAM_STATIC_BLURB |
++                                                        G_PARAM_STATIC_NICK));
++
++  /**
++   * PolkitAgentSelfAuthSession:cookie:
++   *
++   * The cookie obtained from the PolicyKit daemon
++   */
++  g_object_class_install_property (gobject_class,
++                                   PROP_COOKIE,
++                                   g_param_spec_string ("cookie",
++                                                        "Cookie",
++                                                        "The cookie obtained from the PolicyKit daemon",
++                                                        NULL,
++                                                        G_PARAM_CONSTRUCT_ONLY |
++                                                        G_PARAM_READWRITE |
++                                                        G_PARAM_STATIC_NAME |
++                                                        G_PARAM_STATIC_BLURB |
++                                                        G_PARAM_STATIC_NICK));
++
++  signals[COMPLETED_SIGNAL] = g_signal_new ("completed",
++                                            POLKIT_AGENT_TYPE_SELF_AUTH_SESSION,
++                                            G_SIGNAL_RUN_LAST,
++                                            0,                      /* class offset     */
++                                            NULL,                   /* accumulator      */
++                                            NULL,                   /* accumulator data */
++                                            g_cclosure_marshal_VOID__BOOLEAN,
++                                            G_TYPE_NONE,
++                                            1,
++                                            G_TYPE_BOOLEAN);
++}
++
++PolkitAgentSelfAuthSession *
++polkit_agent_self_auth_session_new (PolkitIdentity *identity,
++                                    const gchar    *cookie)
++{
++  PolkitAgentSelfAuthSession *session;
++
++  g_return_val_if_fail (POLKIT_IS_IDENTITY (identity), NULL);
++  g_return_val_if_fail (cookie != NULL, NULL);
++
++  session = g_object_new (POLKIT_AGENT_TYPE_SELF_AUTH_SESSION,
++                          "identity", identity,
++                          "cookie", cookie,
++                          NULL);
++
++  return session;
++}
++
++static void
++kill_helper (PolkitAgentSelfAuthSession *session)
++{
++  if (!session->helper_is_running)
++    goto out;
++
++  if (session->child_pid > 0)
++    {
++      gint status;
++      //g_debug ("Sending SIGTERM to helper");
++      kill (session->child_pid, SIGTERM);
++      waitpid (session->child_pid, &status, 0);
++      session->child_pid = 0;
++    }
++
++  if (session->child_stdout_watch_source != NULL)
++    {
++      g_source_destroy (session->child_stdout_watch_source);
++      g_source_unref (session->child_stdout_watch_source);
++      session->child_stdout_watch_source = NULL;
++    }
++
++  if (session->child_stdout_channel != NULL)
++    {
++      g_io_channel_unref (session->child_stdout_channel);
++      session->child_stdout_channel = NULL;
++    }
++
++  if (session->child_stdout != -1)
++    {
++      g_warn_if_fail (close (session->child_stdout) == 0);
++      session->child_stdout = -1;
++    }
++
++  g_clear_object (&session->child_stdin);
++
++  session->helper_is_running = FALSE;
++
++ out:
++  ;
++}
++
++static void
++complete_session (PolkitAgentSelfAuthSession *session,
++                  gboolean                    result)
++{
++  kill_helper (session);
++  if (!session->have_emitted_completed)
++    {
++      session->have_emitted_completed = TRUE;
++      /* Note that the signal handler may drop the last reference to session. */
++      g_signal_emit_by_name (session, "completed", result);
++    }
++}
++
++static gboolean
++io_watch_have_data (GIOChannel    *channel,
++                    GIOCondition   condition,
++                    gpointer       user_data)
++{
++  PolkitAgentSelfAuthSession *session = POLKIT_AGENT_SELF_AUTH_SESSION (user_data);
++  gchar *line, *unescaped;
++  GError *error;
++
++  error = NULL;
++  line = NULL;
++  unescaped = NULL;
++
++  if (!session->helper_is_running)
++    {
++      g_warning ("in io_watch_have_data() but helper is not supposed to be running");
++
++      complete_session (session, FALSE);
++      goto out;
++    }
++
++  g_io_channel_read_line (channel,
++                          &line,
++                          NULL,
++                          NULL,
++                          &error);
++  if (error != NULL || line == NULL)
++    {
++      /* In case we get just G_IO_HUP, line is NULL but error is
++         unset.*/
++      g_warning ("Error reading line from helper: %s",
++                 error ? error->message : "nothing to read");
++      g_clear_error (&error);
++
++      complete_session (session, FALSE);
++      goto out;
++    }
++
++  /* remove terminator */
++  if (strlen (line) > 0 && line[strlen (line) - 1] == '\n')
++    line[strlen (line) - 1] = '\0';
++
++  unescaped = g_strcompress (line);
++
++  if (g_str_has_prefix (unescaped, "SUCCESS"))
++    {
++      complete_session (session, TRUE);
++    }
++  else if (g_str_has_prefix (unescaped, "FAILURE"))
++    {
++      complete_session (session, FALSE);
++    }
++  else
++    {
++      g_warning ("Unknown line '%s' from helper", line);
++      complete_session (session, FALSE);
++    }
++
++ out:
++  g_free (line);
++  g_free (unescaped);
++
++  if (condition & (G_IO_ERR | G_IO_HUP))
++    complete_session (session, FALSE);
++
++  /* keep the IOChannel around */
++  return TRUE;
++}
++
++void
++polkit_agent_self_auth_session_initiate (PolkitAgentSelfAuthSession *session)
++{
++  uid_t uid;
++  GError *error;
++  gchar *helper_argv[3];
++  struct passwd *passwd;
++  int stdin_fd = -1;
++
++  g_return_if_fail (POLKIT_AGENT_IS_SELF_AUTH_SESSION (session));
++
++  /* TODO: also support authorization for other kinds of identities */
++  if (!POLKIT_IS_UNIX_USER (session->identity))
++    {
++      g_warning ("Unsupported identity type");
++      goto error;
++    }
++
++  uid = polkit_unix_user_get_uid (POLKIT_UNIX_USER (session->identity));
++
++  passwd = getpwuid (uid);
++  if (passwd == NULL)
++    {
++      g_warning ("No user with uid %d", uid);
++      goto error;
++    }
++
++  helper_argv[0] = g_strdup (POLKIT_AGENT_SELF_AUTH_HELPER);
++  helper_argv[1] = g_strdup (passwd->pw_name);
++  helper_argv[2] = NULL;
++
++  session->child_stdout = -1;
++
++  error = NULL;
++  if (!g_spawn_async_with_pipes (NULL,
++                                 helper_argv,
++                                 NULL,
++                                 G_SPAWN_DO_NOT_REAP_CHILD |
++                                 0,//G_SPAWN_STDERR_TO_DEV_NULL,
++                                 NULL,
++                                 NULL,
++                                 &session->child_pid,
++                                 &stdin_fd,
++                                 &session->child_stdout,
++                                 NULL,
++                                 &error))
++    {
++      g_warning ("Cannot spawn helper: %s\n", error->message);
++      g_error_free (error);
++      goto error;
++    }
++
++  session->child_stdin = (GOutputStream*)g_unix_output_stream_new (stdin_fd, TRUE);
++
++  /* Write the cookie on stdin so it can't be seen by other processes */
++  (void) g_output_stream_write_all (session->child_stdin, session->cookie, strlen (session->cookie),
++                                    NULL, NULL, NULL);
++  (void) g_output_stream_write_all (session->child_stdin, "\n", 1, NULL, NULL, NULL);
++
++  session->child_stdout_channel = g_io_channel_unix_new (session->child_stdout);
++  session->child_stdout_watch_source = g_io_create_watch (session->child_stdout_channel,
++                                                          G_IO_IN | G_IO_ERR | G_IO_HUP);
++  g_source_set_callback (session->child_stdout_watch_source, (GSourceFunc) io_watch_have_data, session, NULL);
++  g_source_attach (session->child_stdout_watch_source, g_main_context_get_thread_default ());
++
++
++  session->helper_is_running = TRUE;
++
++  return;
++
++error:
++  complete_session (session, FALSE);
++}
++
++void
++polkit_agent_self_auth_session_cancel (PolkitAgentSelfAuthSession *session)
++{
++  g_return_if_fail (POLKIT_AGENT_IS_SELF_AUTH_SESSION (session));
++
++  complete_session (session, FALSE);
++}
+diff --git a/gnome-flashback/libpolkit/polkit-agent-self-auth-session.h b/gnome-flashback/libpolkit/polkit-agent-self-auth-session.h
+new file mode 100644
+index 0000000..3208f29
+--- /dev/null
++++ b/gnome-flashback/libpolkit/polkit-agent-self-auth-session.h
+@@ -0,0 +1,59 @@
++/*
++ * Copyright (c) 2015 - 2017 gooroom <gooroom@gooroom.kr>
++ * Copyright (C) 2008 Red Hat, Inc.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General
++ * Public License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place, Suite 330,
++ * Boston, MA 02111-1307, USA.
++ *
++ * Author: David Zeuthen <davidz@redhat.com>
++ */
++
++#ifndef __POLKIT_AGENT_SELF_AUTH_SESSION_H
++#define __POLKIT_AGENT_SELF_AUTH_SESSION_H
++
++#include <glib.h>
++
++G_BEGIN_DECLS
++
++#define POLKIT_AGENT_TYPE_SELF_AUTH_SESSION          (polkit_agent_self_auth_session_get_type())
++#define POLKIT_AGENT_SELF_AUTH_SESSION(o)            (G_TYPE_CHECK_INSTANCE_CAST ((o), POLKIT_AGENT_TYPE_SELF_AUTH_SESSION, PolkitAgentSelfAuthSession))
++#define POLKIT_AGENT_SELF_AUTH_SESSION_CLASS(k)      (G_TYPE_CHECK_CLASS_CAST((k), POLKIT_AGENT_TYPE_SELF_AUTH_SESSION, PolkitAgentSelfAuthSessionClass))
++#define POLKIT_AGENT_SELF_AUTH_SESSION_GET_CLASS(o)  (G_TYPE_INSTANCE_GET_CLASS ((o), POLKIT_AGENT_TYPE_SELF_AUTH_SESSION, PolkitAgentSelfAuthSessionClass))
++#define POLKIT_AGENT_IS_SELF_AUTH_SESSION(o)         (G_TYPE_CHECK_INSTANCE_TYPE ((o), POLKIT_AGENT_TYPE_SELF_AUTH_SESSION))
++#define POLKIT_AGENT_IS_SELF_AUTH_SESSION_CLASS(k)   (G_TYPE_CHECK_CLASS_TYPE ((k), POLKIT_AGENT_TYPE_SELF_AUTH_SESSION))
++
++typedef struct _PolkitAgentSelfAuthSession      PolkitAgentSelfAuthSession;
++typedef struct _PolkitAgentSelfAuthSessionClass PolkitAgentSelfAuthSessionClass;
++
++struct _PolkitAgentSelfAuthSessionClass
++{
++  GObjectClass parent_class;
++};
++
++
++
++GType                polkit_agent_self_auth_session_get_type     (void) G_GNUC_CONST;
++
++PolkitAgentSelfAuthSession  *polkit_agent_self_auth_session_new (PolkitIdentity *identity,
++                                                                 const gchar  *cookie);
++
++void                 polkit_agent_self_auth_session_initiate     (PolkitAgentSelfAuthSession  *session);
++void                 polkit_agent_self_auth_session_response     (PolkitAgentSelfAuthSession  *session,
++                                                                  const gchar                 *response);
++void                 polkit_agent_self_auth_session_cancel       (PolkitAgentSelfAuthSession  *session);
++
++G_END_DECLS
++
++#endif /* __POLKIT_AGENT_SELF_AUTH_SESSION_H */
+diff --git a/po/POTFILES.in b/po/POTFILES.in
+index cce55c7..3de5c17 100644
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -43,6 +43,7 @@ gnome-flashback/libpolkit/flashback-authenticator.c
+ gnome-flashback/libpolkit/flashback-listener.c
+ gnome-flashback/libpolkit/flashback-polkit-dialog.c
+ gnome-flashback/libpolkit/flashback-polkit-dialog.ui
++gnome-flashback/libpolkit/polkit-agent-self-auth-dialog.ui
+ gnome-flashback/libscreensaver/gf-auth.c
+ gnome-flashback/libscreensaver/gf-unlock-dialog.c
+ gnome-flashback/libscreensaver/gf-unlock-dialog.ui

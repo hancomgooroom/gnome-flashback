@@ -1,0 +1,13 @@
+diff --git a/gnome-flashback/libpolkit/flashback-polkit-dialog.c b/gnome-flashback/libpolkit/flashback-polkit-dialog.c
+index b84c504..aaeb5f3 100644
+--- a/gnome-flashback/libpolkit/flashback-polkit-dialog.c
++++ b/gnome-flashback/libpolkit/flashback-polkit-dialog.c
+@@ -931,6 +931,8 @@ flashback_polkit_dialog_init (FlashbackPolkitDialog *dialog)
+   gtk_widget_init_template (widget);
+ 
+   gtk_window_set_keep_above (window, TRUE);
++  gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
++  gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
+ 
+   g_signal_connect (dialog, "close",
+                     G_CALLBACK (flashback_polkit_dialog_close),

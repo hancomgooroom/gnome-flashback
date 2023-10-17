@@ -3,4 +3,6 @@ usr/lib/${DEB_HOST_MULTIARCH}/gnome-panel/modules/system_indicators.so
 usr/libexec/gnome-flashback-clipboard
 usr/libexec/gnome-flashback-idle-monitor
 usr/libexec/gnome-flashback-media-keys
+usr/libexec/polkit-agent-self-auth-helper
+usr/libexec/monitors-xml-system-wide-helper
 usr/share/applications/

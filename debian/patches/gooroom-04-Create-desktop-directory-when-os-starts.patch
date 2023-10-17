@@ -1,0 +1,91 @@
+diff --git a/gnome-flashback/libdesktop/gf-desktop.c b/gnome-flashback/libdesktop/gf-desktop.c
+index efcdcc3..f384a95 100644
+--- a/gnome-flashback/libdesktop/gf-desktop.c
++++ b/gnome-flashback/libdesktop/gf-desktop.c
+@@ -17,6 +17,7 @@
+ 
+ #include "config.h"
+ #include "gf-desktop.h"
++#include "gf-utils.h"
+ 
+ #include <gio/gio.h>
+ 
+@@ -68,9 +69,11 @@ gf_desktop_init (GfDesktop *self)
+ {
+   gboolean draw_background;
+   gboolean show_icons;
++  char *desktop_directory;
+   GError *error;
+ 
+   self->settings = g_settings_new ("org.gnome.gnome-flashback.desktop");
++  desktop_directory = nautilus_get_desktop_directory ();
+ 
+   draw_background = g_settings_get_boolean (self->settings, "draw-background");
+   show_icons = g_settings_get_boolean (self->settings, "show-icons");
+@@ -98,6 +101,8 @@ gf_desktop_init (GfDesktop *self)
+     g_signal_connect (self->window, "ready", G_CALLBACK (ready_cb), self);
+   else
+     gtk_widget_show (self->window);
++
++  g_free (desktop_directory);
+ }
+ 
+ GfDesktop *
+diff --git a/gnome-flashback/libdesktop/gf-utils.c b/gnome-flashback/libdesktop/gf-utils.c
+index c23d3f8..0a404fe 100644
+--- a/gnome-flashback/libdesktop/gf-utils.c
++++ b/gnome-flashback/libdesktop/gf-utils.c
+@@ -20,6 +20,12 @@
+ 
+ #include <gio/gdesktopappinfo.h>
+ #include <systemd/sd-journal.h>
++#include <glib.h>
++#include <glib/gi18n.h>
++#include <glib/gstdio.h>
++
++#define NAUTILUS_DESKTOP_DIRECTORY_NAME "Desktop"
++#define DEFAULT_NAUTILUS_DIRECTORY_MODE (0755)
+ 
+ static void
+ child_setup (gpointer user_data)
+@@ -202,3 +208,27 @@ gf_get_nautilus_scale (void)
+ 
+   return size / 64.0;
+ }
++
++char *
++nautilus_get_desktop_directory (void)
++{
++    char *desktop_directory = NULL;
++
++    desktop_directory = g_build_filename (g_get_home_dir (),
++                                          NAUTILUS_DESKTOP_DIRECTORY_NAME,
++                                          NULL);
++
++    if (!g_file_test (desktop_directory, G_FILE_TEST_EXISTS))
++    {
++        g_mkdir (desktop_directory, DEFAULT_NAUTILUS_DIRECTORY_MODE);
++        /* FIXME bugzilla.gnome.org 41286:
++         * How should we handle the case where this mkdir fails?
++         * Note that nautilus_application_startup will refuse to launch if this
++         * directory doesn't get created, so that case is OK. But the directory
++         * could be deleted after Nautilus was launched, and perhaps
++         * there is some bad side-effect of not handling that case.
++         */
++    }
++
++    return desktop_directory;
++}
+diff --git a/gnome-flashback/libdesktop/gf-utils.h b/gnome-flashback/libdesktop/gf-utils.h
+index f074aa5..3722667 100644
+--- a/gnome-flashback/libdesktop/gf-utils.h
++++ b/gnome-flashback/libdesktop/gf-utils.h
+@@ -34,6 +34,8 @@ gboolean gf_launch_uri          (const char       *uri,
+ 
+ double   gf_get_nautilus_scale  (void);
+ 
++char    *nautilus_get_desktop_directory (void);
++
+ G_END_DECLS
+ 
+ #endif

@@ -1,0 +1,73 @@
+diff --git a/gnome-flashback/libscreensaver/gf-manager.c b/gnome-flashback/libscreensaver/gf-manager.c
+index c8604c6..2abda41 100644
+--- a/gnome-flashback/libscreensaver/gf-manager.c
++++ b/gnome-flashback/libscreensaver/gf-manager.c
+@@ -87,38 +87,49 @@ static guint manager_signals[LAST_SIGNAL] = { 0 };
+ 
+ G_DEFINE_TYPE (GfManager, gf_manager, G_TYPE_OBJECT)
+ 
++static GdkScreen *
++gf_window_get_screen (GfWindow  *window)
++{
++  g_return_val_if_fail (GF_IS_WINDOW (window), NULL);
++
++  return gtk_window_get_screen (GTK_WINDOW (window));
++}
++
+ static GfWindow *
+ find_window_at_pointer (GfManager *self)
+ {
++  GSList *l;
+   GdkDisplay *display;
+-  GdkSeat *seat;
+-  GdkDevice *pointer;
++  GdkScreen *screen;
+   GfWindow *window;
++  GdkMonitor *monitor;
++  int i, n_monitors;
+ 
+   display = gdk_display_get_default ();
+-  seat = gdk_display_get_default_seat (display);
+-  pointer = gdk_seat_get_pointer (seat);
++  screen = gdk_display_get_default_screen (display);
+ 
+   window = NULL;
+-  if (pointer != NULL)
+-    {
+-      int x;
+-      int y;
+-      GdkMonitor *monitor;
+-      GSList *l;
+ 
+-      gdk_device_get_position (pointer, NULL, &x, &y);
+-      monitor = gdk_display_get_monitor_at_point (display, x, y);
+-
+-      /* find the GfWindow that is on screen */
+-      for (l = self->windows; l != NULL; l = l->next)
++  n_monitors = gdk_display_get_n_monitors (display);
++  for (i = 0; i < n_monitors; i++)
++    {
++      GdkMonitor *m = gdk_display_get_monitor (display, i);
++      if (gdk_monitor_is_primary (m))
+         {
+-          GfWindow *tmp;
++          monitor = m;
++          break;
++        }
++    }
+ 
+-          tmp = GF_WINDOW (l->data);
+-          if (gf_window_get_monitor (tmp) != monitor)
+-            continue;
++  /* find the GfWindow that is on screen */
++  for (l = self->windows; l != NULL; l = l->next)
++    {
++      GfWindow *tmp;
+ 
++      tmp = GF_WINDOW (l->data);
++      if (gf_window_get_screen (tmp) == screen
++          && gf_window_get_monitor (tmp) == monitor)
++        {
+           window = tmp;
+           break;
+         }

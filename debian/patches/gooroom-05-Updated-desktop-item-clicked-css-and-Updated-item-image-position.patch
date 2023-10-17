@@ -1,0 +1,47 @@
+diff --git a/gnome-flashback/libdesktop/gf-icon.c b/gnome-flashback/libdesktop/gf-icon.c
+index 1a08d9b..8b581f8 100644
+--- a/gnome-flashback/libdesktop/gf-icon.c
++++ b/gnome-flashback/libdesktop/gf-icon.c
+@@ -791,8 +791,8 @@ get_thumbnail_surface (GfIcon *self)
+   cairo_surface_get_device_scale (surface, &x_scale, &y_scale);
+   cairo_surface_set_device_scale (thumbnail_surface, x_scale, y_scale);
+ 
+-  x = (size - width) / scale;
+-  y = (size - height) / scale;
++  x = (size - width) / (scale * 2);
++  y = (size - height) / (scale * 2);
+ 
+   cr = cairo_create (thumbnail_surface);
+ 
+@@ -1459,12 +1459,16 @@ gf_icon_init (GfIcon *self)
+ 
+   setup_drag_source (self);
+ 
+-  box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
++  box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
++  gtk_widget_set_halign (GTK_WIDGET (box), GTK_ALIGN_CENTER);
+   gtk_container_add (GTK_CONTAINER (self), box);
+   gtk_widget_show (box);
+ 
+   priv->image = gtk_image_new ();
++  gtk_widget_set_hexpand (priv->image, TRUE);
++  gtk_widget_set_vexpand (priv->image, TRUE);
+   gtk_widget_set_halign (priv->image, GTK_ALIGN_CENTER);
++  gtk_widget_set_valign (priv->image, GTK_ALIGN_CENTER);
+   gtk_box_pack_start (GTK_BOX (box), priv->image, FALSE, FALSE, 0);
+   gtk_widget_show (priv->image);
+ 
+@@ -1474,12 +1478,11 @@ gf_icon_init (GfIcon *self)
+ 
+   label = GTK_LABEL (priv->label);
+ 
+-  gtk_label_set_lines (label, 2);
++  gtk_label_set_lines (label, 3);
+   gtk_label_set_line_wrap (label, TRUE);
+   gtk_label_set_line_wrap_mode (label, PANGO_WRAP_WORD_CHAR);
+   gtk_label_set_ellipsize (label, PANGO_ELLIPSIZE_END);
+   gtk_label_set_justify (label, GTK_JUSTIFY_CENTER);
+-  gtk_label_set_yalign (label, 0.0);
+ 
+ #ifdef HAVE_PANGO144
+   attrs = pango_attr_list_new ();

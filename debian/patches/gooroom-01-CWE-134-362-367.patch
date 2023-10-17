@@ -1,0 +1,21 @@
+diff --git a/gnome-flashback/libscreensaver/gf-listener.c b/gnome-flashback/libscreensaver/gf-listener.c
+index 39f5dc9..ecb3b5f 100644
+--- a/gnome-flashback/libscreensaver/gf-listener.c
++++ b/gnome-flashback/libscreensaver/gf-listener.c
+@@ -23,6 +23,7 @@
+ #include "config.h"
+ #include "gf-listener.h"
+ 
++#include <glib/gstdio.h>
+ #include <gio/gunixfdlist.h>
+ #include <time.h>
+ 
+@@ -589,7 +590,7 @@ gf_listener_init (GfListener *self)
+   self->inhibit_lock_fd = -1;
+ 
+   /* check if logind is running */
+-  if (access("/run/systemd/seats/", F_OK) >= 0)
++  if (g_access("/run/systemd/seats/", F_OK) >= 0)
+     {
+       self->login_id = g_bus_watch_name (G_BUS_TYPE_SYSTEM,
+                                          LOGIN_DBUS_NAME,

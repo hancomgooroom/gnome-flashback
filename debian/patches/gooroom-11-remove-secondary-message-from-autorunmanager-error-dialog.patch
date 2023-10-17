@@ -1,0 +1,30 @@
+diff --git a/gnome-flashback/libautomount-manager/gsd-automount-manager.c b/gnome-flashback/libautomount-manager/gsd-automount-manager.c
+index 07bd74c..56cfbc8 100644
+--- a/gnome-flashback/libautomount-manager/gsd-automount-manager.c
++++ b/gnome-flashback/libautomount-manager/gsd-automount-manager.c
+@@ -84,18 +84,20 @@ static GtkDialog *
+ show_error_dialog (const char *primary_text,
+ 		   const char *secondary_text)
+ {
++	gchar *markup_str;
+ 	GtkWidget *dialog;
+ 
+ 	dialog = gtk_message_dialog_new (NULL,
+ 					 0,
+ 					 GTK_MESSAGE_ERROR,
+ 					 GTK_BUTTONS_OK,
+-					 "%s", "");
++					 NULL);
+ 
+-	g_object_set (dialog,
+-		      "text", primary_text,
+-		      "secondary-text", secondary_text,
+-		      NULL);
++	gtk_window_set_title (GTK_WINDOW (dialog), _("Notifications"));
++
++	markup_str = g_strconcat ("<span weight=\"bold\" size=\"larger\">", primary_text, "</span>", NULL);
++	gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog), "%s", markup_str);
++	g_free (markup_str);
+ 
+ 	gtk_widget_show (GTK_WIDGET (dialog));
+ 

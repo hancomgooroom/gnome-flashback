@@ -1,0 +1,194 @@
+diff --git a/backends/Makefile.am b/backends/Makefile.am
+index ea2f949..a7f5858 100644
+--- a/backends/Makefile.am
++++ b/backends/Makefile.am
+@@ -1,5 +1,20 @@
+ NULL =
+ 
++libexec_PROGRAMS = monitors-xml-system-wide-helper
++
++monitors_xml_system_wide_helper_SOURCES = \
++	monitors-xml-system-wide-helper.c
++
++monitors_xml_system_wide_helper_CFLAGS = \
++	$(GLIB_CFLAGS)
++
++monitors_xml_system_wide_helper_LDFLAGS = \
++	$(GLIB_LIBS)
++
++install-exec-hook:
++	-chown root:root $(DESTDIR)$(libexecdir)/monitors-xml-system-wide-helper
++	-chmod 4755 $(DESTDIR)$(libexecdir)/monitors-xml-system-wide-helper
++
+ noinst_LTLIBRARIES = \
+ 	libbackends.la \
+ 	$(NULL)
+@@ -7,6 +22,7 @@ noinst_LTLIBRARIES = \
+ libbackends_la_CPPFLAGS = \
+ 	-DG_LOG_DOMAIN=\"gf-backends\" \
+ 	-DG_LOG_USE_STRUCTURED=1 \
++	-DMONITORS_XML_SYSTEM_WIDE_HELPER=\"$(libexecdir)/monitors-xml-system-wide-helper\" \
+ 	-I$(top_srcdir) \
+ 	$(AM_CPPFLAGS) \
+ 	$(NULL)
+diff --git a/backends/gf-monitor-config-store.c b/backends/gf-monitor-config-store.c
+index 2031f69..b01c262 100644
+--- a/backends/gf-monitor-config-store.c
++++ b/backends/gf-monitor-config-store.c
+@@ -1755,6 +1755,26 @@ generate_config_xml (GfMonitorConfigStore *config_store)
+   return buffer;
+ }
+ 
++static void
++system_wide_monitors_xml (void)
++{
++  char *cmd;
++  GError *error;
++
++  cmd = g_strdup_printf ("%s -u %s",
++                         MONITORS_XML_SYSTEM_WIDE_HELPER,
++                         g_get_user_name ());
++
++  error = NULL;
++  if (!g_spawn_command_line_async (cmd, &error))
++    {
++      g_warning ("Failed to save monitors.xml file system-wide: %s\n", error->message);
++      g_error_free (error);
++    }
++
++  g_free (cmd);
++}
++
+ static void
+ saved_cb (GObject      *object,
+           GAsyncResult *result,
+@@ -1778,6 +1798,7 @@ saved_cb (GObject      *object,
+     }
+   else
+     {
++      system_wide_monitors_xml ();
+       g_clear_object (&data->config_store->save_cancellable);
+     }
+ 
+@@ -1813,6 +1834,10 @@ gf_monitor_config_store_save_sync (GfMonitorConfigStore *config_store)
+       g_warning ("Saving monitor configuration failed: %s\n", error->message);
+       g_error_free (error);
+     }
++  else
++    {
++      system_wide_monitors_xml ();
++    }
+ 
+   g_string_free (buffer, TRUE);
+ }
+diff --git a/backends/monitors-xml-system-wide-helper.c b/backends/monitors-xml-system-wide-helper.c
+new file mode 100644
+index 0000000..e5a092b
+--- /dev/null
++++ b/backends/monitors-xml-system-wide-helper.c
+@@ -0,0 +1,90 @@
++/*
++ * Copyright (C) 2015-2020 Gooroom <gooroom@gooroom.kr>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with this program; if not, write to the Free Software Foundation, Inc.,
++ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <glib.h>
++
++
++static gchar *user = NULL;
++
++static GOptionEntry option_entries[] =
++{
++	{ "user", 'u', 0, G_OPTION_ARG_STRING, &user, NULL, NULL },
++    { NULL }
++};
++
++
++static void
++copy_monitors_config (const char *user)
++{
++	const char *target;
++	gchar *source, *contents;
++        char *realfile;
++
++	source = g_strdup_printf ("/home/%s/.config/monitors.xml", user);
++	target = "/var/lib/lightdm/.config/monitors.xml";
++
++	if (!g_file_test (source, G_FILE_TEST_EXISTS))
++		goto out;
++
++        realfile = realpath (source, NULL);
++        if (g_strcmp0 (realfile, source) != 0)
++                goto out;
++
++	contents = NULL;
++	g_file_get_contents (source, &contents, NULL, NULL);
++	if (contents) {
++		g_file_set_contents (target, contents, -1, NULL);
++		g_free (contents);
++	}
++
++
++out:
++	g_free (source);
++}
++
++int
++main (int argc, char **argv)
++{
++	GError         *error = NULL;
++	GOptionContext *context;
++
++	context = g_option_context_new (NULL);
++	g_option_context_set_ignore_unknown_options (context, TRUE);
++	g_option_context_add_main_entries (context, option_entries, NULL);
++
++	/* parse options */
++	if (!g_option_context_parse (context, &argc, &argv, &error)) {
++		g_error_free (error);
++		g_option_context_free (context);
++
++		return EXIT_FAILURE;
++	}
++	g_option_context_free (context);
++
++	if (!user)
++		return EXIT_FAILURE;
++
++	copy_monitors_config (user);
++
++	return EXIT_SUCCESS;
++}
+diff --git a/configure.ac b/configure.ac
+index 66173eb..90df7d7 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -101,6 +101,10 @@ IBUS_REQUIRED=1.5.2
+ XRANDR_REQUIRED=1.5.0
+ XXF86VM_REQUIRED=1.1.4
+ 
++PKG_CHECK_MODULES([GLIB], [
++  glib-2.0 >= $GLIB_REQUIRED
++])
++
+ PKG_CHECK_MODULES([DBUS], [
+   gio-2.0 >= $GLIB_REQUIRED
+   gio-unix-2.0 >= $GLIB_REQUIRED
