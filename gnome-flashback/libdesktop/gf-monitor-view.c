@@ -662,9 +662,15 @@ drag_drop_cb (GtkWidget      *widget,
   GtkTargetList *target_list;
   GList *list_targets;
   GList *l;
+  GfIconView* icon_view;
 
   target_list = gtk_drag_dest_get_target_list (widget);
   list_targets = gdk_drag_context_list_targets (context);
+
+  if(gf_gooroom_is_tablet_mode()) {
+    icon_view = GF_ICON_VIEW(self->icon_view);
+    gf_move_icon_position(icon_view, x - self->icon_width/2,y - self->icon_height/2);
+  }
 
   for (l = list_targets; l != NULL; l = l->next)
     {

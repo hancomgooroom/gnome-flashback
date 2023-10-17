@@ -3356,3 +3356,20 @@ gf_icon_view_move_uris (GfIconView         *self,
                                    move_uris_cb,
                                    NULL);
 }
+
+void
+gf_move_icon_position(  GfIconView *self,
+                       gdouble x,
+                       gdouble y)
+{
+  GList *l;
+
+  for (l = self->icons; l != NULL; l = l->next)
+  {
+    GfIconInfo *info;
+
+    info = (GfIconInfo *) l->data;   
+    gtk_fixed_move(GTK_FIXED(info->view), GTK_WIDGET(info->icon), x,y);
+    break;
+  }
+}
