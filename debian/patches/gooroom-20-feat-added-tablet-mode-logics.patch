@@ -1,0 +1,235 @@
+diff --git a/gnome-flashback/libdesktop/gf-icon-view.c b/gnome-flashback/libdesktop/gf-icon-view.c
+index b7e46e7..ffd1f73 100644
+--- a/gnome-flashback/libdesktop/gf-icon-view.c
++++ b/gnome-flashback/libdesktop/gf-icon-view.c
+@@ -20,6 +20,7 @@
+ 
+ #include <gdk/gdkx.h>
+ #include <glib/gi18n.h>
++#include <gio/gio.h>
+ 
+ #include "dbus/gf-file-manager-gen.h"
+ #include "dbus/gf-nautilus2-gen.h"
+@@ -1420,6 +1421,40 @@ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
+           g_clear_pointer (&self->rubberband_icons, g_list_free);
+           unselect_icons (self);
+         }
++
++      if( gf_gooroom_is_tablet_mode() && n_press == 2){
++          GSettings* settings;
++          GVariant *newVariant;
++          GVariantBuilder builder;
++          GVariant *curVariant;
++          
++         GVariantIter iter;
++          const gchar *key;
++         GVariant *value;
++          
++          int scale = 1;
++
++          settings = g_settings_new("org.gnome.settings-daemon.plugins.xsettings");
++          curVariant = g_settings_get_value(settings, "overrides");
++         
++         g_variant_iter_init(&iter, curVariant);
++          while (g_variant_iter_next(&iter, "{sv}", &key, &value)) {
++           gint intValue;
++            g_variant_get(value, "i", &intValue);
++            if(intValue == 1){
++              scale = 2;
++            } else {
++              scale = 1;
++            }
++         }
++          g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
++          g_variant_builder_add(&builder, "{sv}", "Gdk/WindowScalingFactor", g_variant_new_int32(scale));
++          newVariant = g_variant_builder_end(&builder);
++       
++          g_settings_set_value(settings, "overrides", newVariant);
++          g_variant_unref(curVariant);
++          g_object_unref(settings);
++      }
+     }
+   else if (button == GDK_BUTTON_SECONDARY)
+     {
+@@ -3376,3 +3411,20 @@ gf_icon_view_move_uris (GfIconView         *self,
+                                    move_uris_cb,
+                                    NULL);
+ }
++
++void
++gf_move_icon_position(  GfIconView *self,
++                       gdouble x,
++                       gdouble y)
++{
++  GList *l;
++
++  for (l = self->icons; l != NULL; l = l->next)
++  {
++    GfIconInfo *info;
++
++    info = (GfIconInfo *) l->data;   
++    gtk_fixed_move(GTK_FIXED(info->view), GTK_WIDGET(info->icon), x,y);
++    break;
++  }
++}
+diff --git a/gnome-flashback/libdesktop/gf-icon-view.h b/gnome-flashback/libdesktop/gf-icon-view.h
+index 455ba05..6caa155 100644
+--- a/gnome-flashback/libdesktop/gf-icon-view.h
++++ b/gnome-flashback/libdesktop/gf-icon-view.h
+@@ -78,6 +78,9 @@ void                gf_icon_view_move_uris                (GfIconView          *
+                                                            const char          *destination,
+                                                            guint32              timestamp);
+ 
++void           gf_move_icon_position(  GfIconView *self,
++                        gdouble x,
++                        gdouble y);
+ G_END_DECLS
+ 
+ #endif
+diff --git a/gnome-flashback/libdesktop/gf-icon.c b/gnome-flashback/libdesktop/gf-icon.c
+index 8b581f8..c62d8ca 100644
+--- a/gnome-flashback/libdesktop/gf-icon.c
++++ b/gnome-flashback/libdesktop/gf-icon.c
+@@ -34,6 +34,8 @@ typedef struct
+ 
+   GtkGesture      *multi_press;
+ 
++  GtkGesture	  *long_press;  
++
+   double           press_x;
+   double           press_y;
+ 
+@@ -63,6 +65,8 @@ typedef struct
+ 
+   gboolean         thumbnail_error;
+   GIcon           *thumbnail;
++
++  gboolean        is_pressed;
+ } GfIconPrivate;
+ 
+ enum
+@@ -609,6 +613,27 @@ create_popup_menu (GfIcon *self)
+   return popup_menu;
+ }
+ 
++static void
++long_press_pressed_cb (GtkGestureMultiPress *gesture,
++                        gdouble               x,
++                        gdouble               y,
++                        GfIcon               *self)
++{
++  GdkEventSequence *sequence;
++  const GdkEvent *event;
++  GtkWidget *popup_menu;
++
++  sequence = gtk_gesture_single_get_current_sequence (GTK_GESTURE_SINGLE (gesture));
++  event = gtk_gesture_get_last_event (GTK_GESTURE (gesture), sequence);
++
++  popup_menu = create_popup_menu (self);
++  g_object_ref_sink (popup_menu);
++
++  gtk_menu_popup_at_pointer (GTK_MENU (popup_menu), event);
++  g_object_unref (popup_menu);
++
++}
++
+ static void
+ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
+                         gint                  n_press,
+@@ -650,9 +675,14 @@ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
+ 
+       priv->did_select = !priv->selected;
+       gf_icon_set_selected (self, TRUE);
+-
+-      if (!control_pressed && n_press == 2)
+-        gf_icon_open (self);
++      if(gf_gooroom_is_tablet_mode()) {
++        if (!control_pressed && n_press == 1){
++          priv->is_pressed = TRUE;
++      }
++      else {
++        if (!control_pressed && n_press == 2)
++          gf_icon_open (self);
++      }
+     }
+   else if (button == GDK_BUTTON_SECONDARY)
+     {
+@@ -719,7 +749,16 @@ multi_press_released_cb (GtkGestureMultiPress *gesture,
+         {
+           gf_icon_set_selected (self, FALSE);
+         }
++        if(button == GDK_BUTTON_PRIMARY && gf_gooroom_is_tablet_mode())
++         {
++          if(!control_pressed && priv->is_pressed && n_press == 1)
++           {
++             gf_icon_open(self);
++           }
++         }
++
+     }
++  priv->is_pressed = FALSE;
+ }
+ 
+ static cairo_surface_t *
+@@ -1115,6 +1154,7 @@ gf_icon_dispose (GObject *object)
+   g_clear_object (&priv->thumbnail_cancellable);
+ 
+   g_clear_object (&priv->multi_press);
++  g_clear_object (&priv->long_press);
+ 
+   g_clear_object (&priv->file);
+   g_clear_object (&priv->info);
+@@ -1444,8 +1484,10 @@ gf_icon_init (GfIcon *self)
+   priv->cancellable = g_cancellable_new ();
+ 
+   priv->multi_press = gtk_gesture_multi_press_new (GTK_WIDGET (self));
++  priv->long_press = gtk_gesture_long_press_new (GTK_WIDGET (self));
+ 
+   gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (priv->multi_press), 0);
++  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (priv->long_press), 0);
+ 
+   g_signal_connect (priv->multi_press, "pressed",
+                     G_CALLBACK (multi_press_pressed_cb),
+@@ -1454,7 +1496,11 @@ gf_icon_init (GfIcon *self)
+   g_signal_connect (priv->multi_press, "released",
+                     G_CALLBACK (multi_press_released_cb),
+                     self);
+-
++  if(gf_gooroom_is_tablet_mode()) {
++    g_signal_connect (priv->long_press, "pressed",
++                      G_CALLBACK (long_press_pressed_cb),
++                      self);
++  }
+   gtk_widget_set_focus_on_click (GTK_WIDGET (self), FALSE);
+ 
+   setup_drag_source (self);
+@@ -1479,6 +1525,8 @@ gf_icon_init (GfIcon *self)
+   label = GTK_LABEL (priv->label);
+ 
+   gtk_label_set_lines (label, 3);
++  priv->is_pressed = FALSE;
++
+   gtk_label_set_line_wrap (label, TRUE);
+   gtk_label_set_line_wrap_mode (label, PANGO_WRAP_WORD_CHAR);
+   gtk_label_set_ellipsize (label, PANGO_ELLIPSIZE_END);
+diff --git a/gnome-flashback/libdesktop/gf-monitor-view.c b/gnome-flashback/libdesktop/gf-monitor-view.c
+index 94adfef..8e83f76 100644
+--- a/gnome-flashback/libdesktop/gf-monitor-view.c
++++ b/gnome-flashback/libdesktop/gf-monitor-view.c
+@@ -670,10 +670,16 @@ drag_drop_cb (GtkWidget      *widget,
+   GtkTargetList *target_list;
+   GList *list_targets;
+   GList *l;
++  GfIconView* icon_view;
+ 
+   target_list = gtk_drag_dest_get_target_list (widget);
+   list_targets = gdk_drag_context_list_targets (context);
+ 
++  if(gf_gooroom_is_tablet_mode()) {
++    icon_view = GF_ICON_VIEW(self->icon_view);
++    gf_move_icon_position(icon_view, x - self->icon_width/2,y - self->icon_height/2);
++  }
++
+   for (l = list_targets; l != NULL; l = l->next)
+     {
+       GdkAtom atom;
