@@ -1,0 +1,72 @@
+diff --git a/gnome-flashback/libdesktop/gf-icon-view.c b/gnome-flashback/libdesktop/gf-icon-view.c
+index ffd1f73..1f0390c 100644
+--- a/gnome-flashback/libdesktop/gf-icon-view.c
++++ b/gnome-flashback/libdesktop/gf-icon-view.c
+@@ -3423,8 +3423,11 @@ gf_move_icon_position(  GfIconView *self,
+   {
+     GfIconInfo *info;
+ 
+-    info = (GfIconInfo *) l->data;   
+-    gtk_fixed_move(GTK_FIXED(info->view), GTK_WIDGET(info->icon), x,y);
+-    break;
++    info = (GfIconInfo *) l->data;
++
++    if(gf_icon_get_is_pressed( (GfIcon *)info->icon )) {
++      gtk_fixed_move(GTK_FIXED(info->view), GTK_WIDGET(info->icon), x,y);
++      break;
++    }
+   }
+ }
+diff --git a/gnome-flashback/libdesktop/gf-icon.c b/gnome-flashback/libdesktop/gf-icon.c
+index c62d8ca..df96c85 100644
+--- a/gnome-flashback/libdesktop/gf-icon.c
++++ b/gnome-flashback/libdesktop/gf-icon.c
+@@ -297,6 +297,10 @@ drag_end_cb (GtkWidget      *widget,
+              GdkDragContext *context,
+              GfIcon         *self)
+ {
++  GfIconPrivate *priv;
++  priv = gf_icon_get_instance_private (self);
++
++  priv->is_pressed = FALSE; 
+ }
+ 
+ static gboolean
+@@ -676,7 +680,7 @@ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
+       priv->did_select = !priv->selected;
+       gf_icon_set_selected (self, TRUE);
+       if(gf_gooroom_is_tablet_mode()) {
+-        if (!control_pressed && n_press == 1){
++        if (!control_pressed && n_press == 1)
+           priv->is_pressed = TRUE;
+       }
+       else {
+@@ -1576,6 +1580,16 @@ gf_icon_get_press (GfIcon *self,
+   *y = priv->press_y;
+ }
+ 
++gboolean
++gf_icon_get_is_pressed (GfIcon *self)
++{
++  GfIconPrivate *priv;
++  
++  priv = gf_icon_get_instance_private (self);
++
++  return priv->is_pressed;
++}
++
+ void
+ gf_icon_set_file (GfIcon *self,
+                   GFile  *file)
+diff --git a/gnome-flashback/libdesktop/gf-icon.h b/gnome-flashback/libdesktop/gf-icon.h
+index 8de6a5e..2fe896a 100644
+--- a/gnome-flashback/libdesktop/gf-icon.h
++++ b/gnome-flashback/libdesktop/gf-icon.h
+@@ -50,6 +50,7 @@ GtkWidget  *gf_icon_get_image         (GfIcon     *self);
+ void        gf_icon_get_press         (GfIcon     *self,
+                                        double     *x,
+                                        double     *y);
++gboolean    gf_icon_get_is_pressed    (GfIcon *self);
+ 
+ void        gf_icon_set_file          (GfIcon     *self,
+                                        GFile      *file);
