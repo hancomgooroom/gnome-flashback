@@ -63,6 +63,8 @@ typedef struct
 
   gboolean         thumbnail_error;
   GIcon           *thumbnail;
+
+  gboolean        is_pressed;
 } GfIconPrivate;
 
 enum
@@ -650,9 +652,14 @@ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
 
       priv->did_select = !priv->selected;
       gf_icon_set_selected (self, TRUE);
-
-      if (!control_pressed && n_press == 2)
-        gf_icon_open (self);
+      if(gf_gooroom_is_tablet_mode()) {
+        if (!control_pressed && n_press == 1){
+          priv->is_pressed = TRUE;
+      }
+      else {
+        if (!control_pressed && n_press == 2)
+          gf_icon_open (self);
+      }
     }
   else if (button == GDK_BUTTON_SECONDARY)
     {
@@ -719,7 +726,16 @@ multi_press_released_cb (GtkGestureMultiPress *gesture,
         {
           gf_icon_set_selected (self, FALSE);
         }
+        if(button == GDK_BUTTON_PRIMARY && gf_gooroom_is_tablet_mode())
+         {
+          if(!control_pressed && priv->is_pressed && n_press == 1)
+           {
+             gf_icon_open(self);
+           }
+         }
+
     }
+  priv->is_pressed = FALSE;
 }
 
 static cairo_surface_t *
@@ -1473,6 +1489,8 @@ gf_icon_init (GfIcon *self)
   gtk_widget_show (priv->label);
 
   label = GTK_LABEL (priv->label);
+
+  priv->is_pressed = FALSE;
 
   gtk_label_set_lines (label, 2);
   gtk_label_set_line_wrap (label, TRUE);
