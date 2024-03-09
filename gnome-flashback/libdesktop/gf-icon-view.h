@@ -78,9 +78,6 @@ void                gf_icon_view_move_uris                (GfIconView          *
                                                            const char          *destination,
                                                            guint32              timestamp);
 
-void           gf_move_icon_position(  GfIconView *self,
-                        gdouble x,
-                        gdouble y);
 G_END_DECLS
 
 #endif
