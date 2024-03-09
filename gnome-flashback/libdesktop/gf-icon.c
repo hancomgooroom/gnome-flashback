@@ -34,6 +34,8 @@ typedef struct
 
   GtkGesture      *multi_press;
 
+  GtkGesture	  *long_press;  
+
   double           press_x;
   double           press_y;
 
@@ -612,6 +614,27 @@ create_popup_menu (GfIcon *self)
 }
 
 static void
+long_press_pressed_cb (GtkGestureMultiPress *gesture,
+                        gdouble               x,
+                        gdouble               y,
+                        GfIcon               *self)
+{
+  GdkEventSequence *sequence;
+  const GdkEvent *event;
+  GtkWidget *popup_menu;
+
+  sequence = gtk_gesture_single_get_current_sequence (GTK_GESTURE_SINGLE (gesture));
+  event = gtk_gesture_get_last_event (GTK_GESTURE (gesture), sequence);
+
+  popup_menu = create_popup_menu (self);
+  g_object_ref_sink (popup_menu);
+
+  gtk_menu_popup_at_pointer (GTK_MENU (popup_menu), event);
+  g_object_unref (popup_menu);
+
+}
+
+static void
 multi_press_pressed_cb (GtkGestureMultiPress *gesture,
                         gint                  n_press,
                         gdouble               x,
@@ -1131,6 +1154,7 @@ gf_icon_dispose (GObject *object)
   g_clear_object (&priv->thumbnail_cancellable);
 
   g_clear_object (&priv->multi_press);
+  g_clear_object (&priv->long_press);
 
   g_clear_object (&priv->file);
   g_clear_object (&priv->info);
@@ -1460,8 +1484,10 @@ gf_icon_init (GfIcon *self)
   priv->cancellable = g_cancellable_new ();
 
   priv->multi_press = gtk_gesture_multi_press_new (GTK_WIDGET (self));
+  priv->long_press = gtk_gesture_long_press_new (GTK_WIDGET (self));
 
   gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (priv->multi_press), 0);
+  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (priv->long_press), 0);
 
   g_signal_connect (priv->multi_press, "pressed",
                     G_CALLBACK (multi_press_pressed_cb),
@@ -1470,7 +1496,11 @@ gf_icon_init (GfIcon *self)
   g_signal_connect (priv->multi_press, "released",
                     G_CALLBACK (multi_press_released_cb),
                     self);
-
+  if(gf_gooroom_is_tablet_mode()) {
+    g_signal_connect (priv->long_press, "pressed",
+                      G_CALLBACK (long_press_pressed_cb),
+                      self);
+  }
   gtk_widget_set_focus_on_click (GTK_WIDGET (self), FALSE);
 
   setup_drag_source (self);
