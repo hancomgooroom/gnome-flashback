@@ -1,3 +1,24 @@
+gnome-flashback (3.46.0-1+grm4u1) unstable; urgency=medium
+
+  [ cjheo ]
+  * [fd18a63e] Rebased on gooroom-4.0
+  * [66948543] Replace gooroom logo file for screensaver.
+
+  [ gangmo.seong ]
+  * [16ab56b8] [feat] activating icon by single touch  - .
+  * [2b8ed062] [feat] pop the popup menu by long press  - .
+  * [0a5fccaa] [feat] desktop icon move by drag and drop  - .
+  * [efbbf6bd] [feat] desktop zoom in and zoom out by double-touch  - zoom in/out the desktop by double touch the desktop empty space
+  * [e4047b2e] added four logics for tablet touch mode
+
+  [ jkwoo ]
+  * [bb4e38df] Revert "[feat] activating icon by single touch"
+  * [82166014] Revert "[feat] pop the popup menu by long press"
+  * [f897b6a7] Revert "[feat] desktop icon move by drag and drop"
+  * [a4da3758] Revert "[feat] desktop zoom in and zoom out by double-touch"
+
+ -- Gooroom Autobuilder <jenkins@gooroom.kr>  Sat, 09 Mar 2024 17:38:16 +0900
+
 gnome-flashback (3.46.0-1) unstable; urgency=medium
 
   * New upstream release.
