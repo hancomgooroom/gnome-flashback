@@ -20,7 +20,6 @@
 
 #include <gdk/gdkx.h>
 #include <glib/gi18n.h>
-#include <gio/gio.h>
 
 #include "dbus/gf-file-manager-gen.h"
 #include "dbus/gf-nautilus2-gen.h"
@@ -1414,40 +1413,6 @@ multi_press_pressed_cb (GtkGestureMultiPress *gesture,
           g_clear_pointer (&self->rubberband_icons, g_list_free);
           unselect_icons (self);
         }
-
-      if( gf_gooroom_is_tablet_mode() && n_press == 2){
-          GSettings* settings;
-          GVariant *newVariant;
-          GVariantBuilder builder;
-          GVariant *curVariant;
-          
-         GVariantIter iter;
-          const gchar *key;
-         GVariant *value;
-          
-          int scale = 1;
-
-          settings = g_settings_new("org.gnome.settings-daemon.plugins.xsettings");
-          curVariant = g_settings_get_value(settings, "overrides");
-         
-         g_variant_iter_init(&iter, curVariant);
-          while (g_variant_iter_next(&iter, "{sv}", &key, &value)) {
-           gint intValue;
-            g_variant_get(value, "i", &intValue);
-            if(intValue == 1){
-              scale = 2;
-            } else {
-              scale = 1;
-            }
-         }
-          g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
-          g_variant_builder_add(&builder, "{sv}", "Gdk/WindowScalingFactor", g_variant_new_int32(scale));
-          newVariant = g_variant_builder_end(&builder);
-       
-          g_settings_set_value(settings, "overrides", newVariant);
-          g_variant_unref(curVariant);
-          g_object_unref(settings);
-      }
     }
   else if (button == GDK_BUTTON_SECONDARY)
     {
