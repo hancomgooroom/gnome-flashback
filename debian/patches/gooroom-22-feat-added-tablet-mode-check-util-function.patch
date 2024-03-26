@@ -17,7 +17,9 @@ index 0a404fe..2afcef4 100644
 +gboolean
 +gf_gooroom_is_tablet_mode(void)
 +{
-+   if(fopen("/etc/gooroom/.tablet-mode", "r")){
++   FILE *fd = fopen("/etc/gooroom/.tablet-mode", "r")
++   if(fd != NULL){
++     fclose(fd);
 +     return TRUE;
 +   }
 +   else {
