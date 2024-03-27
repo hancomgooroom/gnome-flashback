@@ -1,3 +1,10 @@
+gnome-flashback (3.46.0-1+grm4u2) unstable; urgency=medium
+
+  [ gangmo.seong ]
+  * [9c011f33] [bugfix] fix the memoryleak warning when checking tabletmode
+
+ -- Gooroom Autobuilder <jenkins@gooroom.kr>  Wed, 27 Mar 2024 16:35:43 +0900
+
 gnome-flashback (3.46.0-1+grm4u1) unstable; urgency=medium
 
   [ cjheo ]
