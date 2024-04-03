@@ -20,3 +20,4 @@ gooroom-19-apply-monitor-config-to-lightdm.patch
 gooroom-20-feat-added-tablet-mode-logics.patch
 gooroom-21-bugfix-icon-move-by-drag-drop-bugfix.patch
 gooroom-22-feat-added-tablet-mode-check-util-function.patch
+gooroom-23-update-desktop-icon-style.patch

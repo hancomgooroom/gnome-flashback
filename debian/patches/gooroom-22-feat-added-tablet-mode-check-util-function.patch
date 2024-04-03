@@ -1,5 +1,5 @@
 diff --git a/gnome-flashback/libdesktop/gf-utils.c b/gnome-flashback/libdesktop/gf-utils.c
-index 0a404fe..2afcef4 100644
+index 0a404fe..abfa5b4 100644
 --- a/gnome-flashback/libdesktop/gf-utils.c
 +++ b/gnome-flashback/libdesktop/gf-utils.c
 @@ -23,6 +23,7 @@
@@ -10,21 +10,22 @@ index 0a404fe..2afcef4 100644
  
  #define NAUTILUS_DESKTOP_DIRECTORY_NAME "Desktop"
  #define DEFAULT_NAUTILUS_DIRECTORY_MODE (0755)
-@@ -232,3 +233,13 @@ nautilus_get_desktop_directory (void)
+@@ -232,3 +233,16 @@ nautilus_get_desktop_directory (void)
  
      return desktop_directory;
  }
++
 +gboolean
 +gf_gooroom_is_tablet_mode(void)
 +{
-+   FILE *fd = fopen("/etc/gooroom/.tablet-mode", "r")
-+   if(fd != NULL){
-+     fclose(fd);
-+     return TRUE;
-+   }
-+   else {
-+     return FALSE;
-+   }
++	FILE *fd = fopen("/etc/gooroom/.tablet-mode", "r");
++	if(fd != NULL) {
++		fclose(fd);
++		return TRUE;
++	}
++	else {
++		return FALSE;
++	}
 +}
 diff --git a/gnome-flashback/libdesktop/gf-utils.h b/gnome-flashback/libdesktop/gf-utils.h
 index 3722667..a7d7bf9 100644

@@ -1,0 +1,16 @@
+diff --git a/data/theme/gooroom.css b/data/theme/gooroom.css
+index becab5f..93ff729 100644
+--- a/data/theme/gooroom.css
++++ b/data/theme/gooroom.css
+@@ -116,6 +116,11 @@ gf-screensaver-panel-bottom button:disabled {
+   background-color: @insensitive_fg_color;
+ }
+ 
++gf-icon label {
++  color: #ffffff;
++  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.80);
++}
++
+ gf-icon:selected label {
+   background-color: @theme_selected_bg_color;
+   color: #ffffff;
