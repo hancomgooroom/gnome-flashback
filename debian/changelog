@@ -1,3 +1,10 @@
+gnome-flashback (3.46.0-1+grm4u3+han4u1) unstable; urgency=medium
+
+  [ boyeon.choi ]
+  * [6adfcd1c] Init Hancom V4
+
+ -- Gooroom Autobuilder <jenkins@gooroom.kr>  Thu, 29 Aug 2024 12:39:26 +0900
+
 gnome-flashback (3.46.0-1+grm4u3) unstable; urgency=medium
 
   [ boyeon.choi ]
